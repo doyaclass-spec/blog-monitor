@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>네이버 블로그 모니터</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#0a0e1a; --panel:#111827; --border:#1e2d45;
+    --accent:#00d4ff; --ok:#00e676; --warn:#ff5252;
+    --text:#e0eaf5; --muted:#6b7fa3; --card:#141e2e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Noto Sans KR',sans-serif; min-height:100vh; }
+  body::before {
+    content:''; position:fixed; inset:0;
+    background-image: linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
+    background-size:40px 40px; pointer-events:none;
+  }
+  .wrap { position:relative; max-width:1100px; margin:0 auto; padding:28px 20px; }
+
+  header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
+  .logo { display:flex; align-items:center; gap:14px; }
+  .logo-icon { width:44px; height:44px; background:linear-gradient(135deg,#00d4ff22,#00d4ff44); border:1px solid var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; }
+  h1 { font-size:20px; font-weight:700; }
+  h1 span { color:var(--accent); }
+  .subtitle { font-size:12px; color:var(--muted); margin-top:3px; }
+
+  .header-right { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .timer-box { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); line-height:1.8; }
+  .timer-box span { color:var(--accent); }
+  .progress-bar { height:2px; background:var(--border); border-radius:1px; overflow:hidden; margin-top:4px; }
+  .progress-fill { height:100%; background:var(--accent); border-radius:1px; transition:width 1s linear; }
+
+  .btn { padding:9px 20px; border:none; border-radius:8px; font-size:13px; font-family:'Noto Sans KR',sans-serif; font-weight:500; cursor:pointer; transition:all 0.2s; }
+  .btn-primary { background:linear-gradient(135deg,#00b4d8,#0077b6); color:white; box-shadow:0 4px 15px rgba(0,180,216,0.3); }
+  .btn-primary:hover { transform:translateY(-1px); }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+
+  .summary { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+  .sum-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 20px; position:relative; overflow:hidden; }
+  .sum-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
+  .sum-card.total::before { background:linear-gradient(90deg,var(--accent),transparent); }
+  .sum-card.ok::before    { background:linear-gradient(90deg,var(--ok),transparent); }
+  .sum-card.warn::before  { background:linear-gradient(90deg,var(--warn),transparent); }
+  .sum-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .sum-value { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:600; margin-top:6px; }
+  .sum-card.total .sum-value { color:var(--accent); }
+  .sum-card.ok    .sum-value { color:var(--ok); }
+  .sum-card.warn  .sum-value { color:var(--warn); }
+
+  .last-check { font-size:12px; color:var(--muted); margin-bottom:16px; }
+  .last-check span { color:var(--accent); font-family:'JetBrains Mono',monospace; }
+
+  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; position:relative; overflow:hidden; transition:all 0.3s; }
+  .card:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,0.3); }
+  .card.ok   { border-left:3px solid var(--ok); }
+  .card.warn { border-left:3px solid var(--warn); }
+  .card.loading { border-left:3px solid var(--muted); }
+  .card.warn::after { content:''; position:absolute; inset:0; background:rgba(255,82,82,0.04); animation:pulse 2s ease-in-out infinite; pointer-events:none; }
+  @keyframes pulse { 0%,100%{opacity:0} 50%{opacity:1} }
+
+  .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .blog-num { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); background:var(--panel); padding:2px 8px; border-radius:4px; border:1px solid var(--border); }
+  .badge { font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; }
+  .badge-ok      { background:rgba(0,230,118,0.15); color:var(--ok);   border:1px solid rgba(0,230,118,0.3); }
+  .badge-warn    { background:rgba(255,82,82,0.15);  color:var(--warn); border:1px solid rgba(255,82,82,0.3); animation:badgePulse 1.5s ease-in-out infinite; }
+  .badge-loading { background:rgba(107,127,163,0.15); color:var(--muted); border:1px solid rgba(107,127,163,0.3); }
+  @keyframes badgePulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,82,82,0.4)} 50%{box-shadow:0 0 0 4px rgba(255,82,82,0)} }
+
+  .blog-id { font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:600; color:var(--accent); margin-bottom:4px; }
+  .blog-url { font-size:11px; color:var(--muted); text-decoration:none; display:block; margin-bottom:14px; }
+  .blog-url:hover { color:var(--accent); }
+
+  .posts-table { background:#0d1624; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .posts-header { display:grid; grid-template-columns:1fr 80px; padding:7px 14px; background:var(--panel); border-bottom:1px solid var(--border); }
+  .posts-header span { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+  .post-row { display:grid; grid-template-columns:1fr 80px; padding:10px 14px; gap:8px; border-bottom:1px solid #1a2540; }
+  .post-row:last-child { border-bottom:none; }
+  .post-row:nth-child(even) { background:rgba(255,255,255,0.015); }
+  .post-title { font-size:12px; color:#c8d8e8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .post-time { font-size:11px; font-family:'JetBrains Mono',monospace; font-weight:700; text-align:right; white-space:nowrap; }
+
+  .no-posts { font-size:12px; color:var(--warn); text-align:center; padding:20px 0; }
+  .no-posts small { color:var(--muted); display:block; margin-top:4px; font-size:11px; }
+
+  .skeleton { display:flex; flex-direction:column; gap:8px; }
+  .skel-line { height:13px; background:var(--border); border-radius:4px; animation:shimmer 1.5s infinite; }
+  @keyframes shimmer { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+
+  @media (max-width:700px) {
+    .grid { grid-template-columns:1fr; }
+    .summary { grid-template-columns:repeat(3,1fr); }
+    header { flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">📊</div>
+      <div>
+        <h1>네이버 블로그 <span>모니터</span></h1>
+        <div class="subtitle">자동화 프로그램 동작 감시 · 12시간 기준</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="timer-box">
+        <div>다음 갱신: <span id="countdown">30:00</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:100%"></div></div>
+      </div>
+      <button class="btn btn-primary" id="checkBtn" onclick="checkAll()">🔄 지금 확인</button>
+    </div>
+  </header>
+
+  <div class="summary">
+    <div class="sum-card total"><div class="sum-label">모니터링</div><div class="sum-value" id="totalCount">{{ blog_ids|length }}</div></div>
+    <div class="sum-card ok">  <div class="sum-label">✓ 정상</div>  <div class="sum-value" id="okCount">-</div></div>
+    <div class="sum-card warn"><div class="sum-label">⚠ 이상</div>  <div class="sum-value" id="warnCount">-</div></div>
+  </div>
+
+  <div class="last-check">마지막 확인: <span id="lastCheck">-</span>&nbsp;·&nbsp;
+    <span style="color:#00e676">●</span> 3h이내 &nbsp;
+    <span style="color:#ffeb3b">●</span> 6h이내 &nbsp;
+    <span style="color:#e0eaf5">●</span> 12h이내 &nbsp;
+    <span style="color:#ff5252">●</span> 12h초과
+  </div>
+
+  <div class="grid" id="blogsGrid">
+    {% for blog_id in blog_ids %}
+    <div class="card loading" id="card-{{ loop.index0 }}">
+      <div class="card-header">
+        <span class="blog-num">BLOG #{{ loop.index }}</span>
+        <span class="badge badge-loading">⏳ 대기 중</span>
+      </div>
+      <div class="blog-id">{{ blog_id }}</div>
+      <a class="blog-url" href="https://blog.naver.com/{{ blog_id }}" target="_blank">blog.naver.com/{{ blog_id }} ↗</a>
+      <div class="skeleton">
+        <div class="skel-line" style="width:100%"></div>
+        <div class="skel-line" style="width:85%"></div>
+        <div class="skel-line" style="width:70%"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+const WARN_HOURS = 12;
+let countdownSec = 1800;
+let timerInterval;
+
+function timeColor(h) {
+  if (h > WARN_HOURS) return "#ff5252";
+  if (h <= 3) return "#00e676";
+  if (h <= 6) return "#ffeb3b";
+  return "#e0eaf5";
+}
+
+function checkAll() {
+  const btn = document.getElementById("checkBtn");
+  btn.disabled = true;
+  btn.textContent = "⏳ 확인 중...";
+
+  fetch("/api/check")
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) { alert(data.error); return; }
+      renderCards(data.results);
+      document.getElementById("lastCheck").textContent = data.checked_at;
+
+      const ok   = data.results.filter(r => r.ok && r.posts?.[0]?.hoursAgo <= WARN_HOURS).length;
+      const warn = data.results.length - ok;
+      document.getElementById("okCount").textContent   = ok;
+      document.getElementById("warnCount").textContent = warn;
+      resetCountdown();
+    })
+    .catch(e => alert("서버 오류: " + e))
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = "🔄 지금 확인";
+    });
+}
+
+function renderCards(results) {
+  results.forEach((r, i) => {
+    const card = document.getElementById("card-" + i);
+    if (!card) return;
+
+    const isOk = r.ok && r.posts?.length > 0 && r.posts[0].hoursAgo <= WARN_HOURS;
+    card.className = "card " + (isOk ? "ok" : "warn");
+
+    let postsHtml = "";
+    if (r.ok && r.posts && r.posts.length > 0) {
+      postsHtml = `
+        <div class="posts-table">
+          <div class="posts-header"><span>글 제목</span><span style="text-align:right">작성</span></div>
+          ${r.posts.map(p => `
+            <div class="post-row">
+              <span class="post-title">${p.title}</span>
+              <span class="post-time" style="color:${timeColor(p.hoursAgo)}">${p.timeLabel}</span>
+            </div>
+          `).join("")}
+        </div>`;
+    } else {
+      postsHtml = `<div class="no-posts">⚠ 최근 글을 찾을 수 없어요<small>${r.error || "블로그 ID를 확인해주세요"}</small></div>`;
+    }
+
+    card.innerHTML = `
+      <div class="card-header">
+        <span class="blog-num">BLOG #${i+1}</span>
+        <span class="badge ${isOk ? "badge-ok" : "badge-warn"}">${isOk ? "✓ 정상" : "⚠ 이상 감지"}</span>
+      </div>
+      <div class="blog-id">${r.blog_id}</div>
+      <a class="blog-url" href="https://blog.naver.com/${r.blog_id}" target="_blank">blog.naver.com/${r.blog_id} ↗</a>
+      ${postsHtml}
+    `;
+  });
+}
+
+function resetCountdown() {
+  countdownSec = 1800;
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(() => {
+    countdownSec--;
+    if (countdownSec <= 0) { checkAll(); return; }
+    const m = String(Math.floor(countdownSec/60)).padStart(2,"0");
+    const s = String(countdownSec%60).padStart(2,"0");
+    document.getElementById("countdown").textContent = m+":"+s;
+    document.getElementById("progressFill").style.width = (countdownSec/1800*100)+"%";
+  }, 1000);
+}
+
+window.onload = () => checkAll();
+</script>
+</body>
+</html>
