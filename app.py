@@ -4,6 +4,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 import os
+import json
 
 app = Flask(__name__)
 
@@ -28,6 +29,41 @@ BLOG_LABELS = [
     os.environ.get("LABEL6", ""),
 ]
 
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
+
+
+def supabase_request(method, path, data=None):
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return None
+    url = f"{SUPABASE_URL}/rest/v1/{path}"
+    headers = {
+        "apikey": SUPABASE_KEY,
+        "Authorization": f"Bearer {SUPABASE_KEY}",
+        "Content-Type": "application/json",
+        "Prefer": "return=representation,resolution=merge-duplicates"
+    }
+    body = json.dumps(data).encode() if data else None
+    req = urllib.request.Request(url, data=body, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode())
+    except Exception as e:
+        print(f"Supabase error: {e}")
+        return None
+
+
+def get_history(blog_id):
+    today = datetime.now(KST).date()
+    dates = [(today - timedelta(days=i)).isoformat() for i in range(6, -1, -1)]
+    result = supabase_request("GET", f"blog_stats?blog_id=eq.{blog_id}&date=gte.{dates[0]}&order=date.asc")
+    history = {d: 0 for d in dates}
+    if result:
+        for row in result:
+            if row["date"] in history:
+                history[row["date"]] = row["count"]
+    return [{"date": d, "count": history[d]} for d in dates]
+
 
 def fetch_blog_posts(blog_id):
     url = f"https://rss.blog.naver.com/{blog_id}.xml"
@@ -38,26 +74,31 @@ def fetch_blog_posts(blog_id):
         with urllib.request.urlopen(req, timeout=10) as resp:
             xml_data = resp.read()
     except Exception as e:
-        return {"ok": False, "error": str(e)[:80], "posts": []}
+        return {"ok": False, "error": str(e)[:80], "posts": [], "today_count": 0}
 
     try:
         root = ET.fromstring(xml_data)
         items = root.findall(".//item")
     except:
-        return {"ok": False, "error": "XML 파싱 오류", "posts": []}
+        return {"ok": False, "error": "XML 파싱 오류", "posts": [], "today_count": 0}
 
     if not items:
-        return {"ok": False, "error": "글 없음", "posts": []}
+        return {"ok": False, "error": "글 없음", "posts": [], "today_count": 0}
 
     now = datetime.now(KST)
+    today_str = now.date().isoformat()
     posts = []
+    today_count = 0
 
-    for item in items[:5]:
+    for item in items[:15]:  # 최대 15개
         title = item.findtext("title") or ""
         pub_date_str = item.findtext("pubDate") or ""
+        link = item.findtext("link") or ""
         try:
             dt = parsedate_to_datetime(pub_date_str).astimezone(KST)
             elapsed = (now - dt).total_seconds() / 3600
+            if dt.date().isoformat() == today_str:
+                today_count += 1
             h = int(elapsed)
             m = int((elapsed % 1) * 60)
             if elapsed < 1:
@@ -66,16 +107,16 @@ def fetch_blog_posts(blog_id):
                 lbl = f"{h}시간 {m}분 전"
             else:
                 lbl = f"{int(elapsed//24)}일 전"
-
             posts.append({
                 "title": title,
                 "hoursAgo": round(elapsed, 1),
-                "timeLabel": lbl
+                "timeLabel": lbl,
+                "link": link
             })
         except:
             continue
 
-    return {"ok": True, "posts": posts}
+    return {"ok": True, "posts": posts, "today_count": today_count}
 
 
 @app.route("/")
@@ -94,10 +135,25 @@ def check_all():
         if not bid:
             continue
         result = fetch_blog_posts(bid)
-        results.append({"blog_id": bid, "label": blabel, **result})
-
+        history = get_history(bid)
+        results.append({"blog_id": bid, "label": blabel, "history": history, **result})
     now_str = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
     return jsonify({"results": results, "checked_at": now_str, "warn_hours": WARN_HOURS})
+
+
+@app.route("/api/record", methods=["GET", "POST"])
+def record_daily():
+    today_str = datetime.now(KST).date().isoformat()
+    saved = []
+    for bid in BLOG_IDS:
+        if not bid:
+            continue
+        result = fetch_blog_posts(bid)
+        count = result.get("today_count", 0)
+        data = {"blog_id": bid, "date": today_str, "count": count}
+        supabase_request("POST", "blog_stats?on_conflict=blog_id,date", data)
+        saved.append({"blog_id": bid, "date": today_str, "count": count})
+    return jsonify({"status": "ok", "recorded": saved})
 
 
 if __name__ == "__main__":

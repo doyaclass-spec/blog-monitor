@@ -10,89 +10,140 @@
     --bg:#0a0e1a; --panel:#111827; --border:#1e2d45;
     --accent:#00d4ff; --ok:#00e676; --warn:#ff5252;
     --text:#e0eaf5; --muted:#6b7fa3; --card:#141e2e;
+    --gold:#ffd700;
   }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:var(--bg); color:var(--text); font-family:'Noto Sans KR',sans-serif; min-height:100vh; }
-  body::before {
-    content:''; position:fixed; inset:0;
-    background-image: linear-gradient(rgba(0,212,255,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(0,212,255,0.03) 1px,transparent 1px);
-    background-size:40px 40px; pointer-events:none;
-  }
-  .wrap { position:relative; max-width:1100px; margin:0 auto; padding:28px 20px; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0;}
+  .wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:24px 16px;}
 
-  header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:28px; padding-bottom:20px; border-bottom:1px solid var(--border); }
-  .logo { display:flex; align-items:center; gap:14px; }
-  .logo-icon { width:44px; height:44px; background:linear-gradient(135deg,#00d4ff22,#00d4ff44); border:1px solid var(--accent); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; }
-  h1 { font-size:20px; font-weight:700; }
-  h1 span { color:var(--accent); }
-  .subtitle { font-size:12px; color:var(--muted); margin-top:3px; }
-  .header-right { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-  .timer-box { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:8px 14px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); line-height:1.8; }
-  .timer-box span { color:var(--accent); }
-  .progress-bar { height:2px; background:var(--border); border-radius:1px; overflow:hidden; margin-top:4px; }
-  .progress-fill { height:100%; background:var(--accent); border-radius:1px; transition:width 1s linear; }
-  .btn { padding:9px 20px; border:none; border-radius:8px; font-size:13px; font-family:'Noto Sans KR',sans-serif; font-weight:500; cursor:pointer; transition:all 0.2s; }
-  .btn-primary { background:linear-gradient(135deg,#00b4d8,#0077b6); color:white; box-shadow:0 4px 15px rgba(0,180,216,0.3); }
-  .btn-primary:hover { transform:translateY(-1px); }
-  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  /* 헤더 */
+  header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+  .logo{display:flex;align-items:center;gap:12px;}
+  .logo-icon{width:44px;height:44px;background:linear-gradient(135deg,rgba(0,212,255,0.15),rgba(0,212,255,0.3));border:1px solid var(--accent);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 20px rgba(0,212,255,0.2);flex-shrink:0;}
+  h1{font-size:19px;font-weight:700;}
+  h1 span{color:var(--accent);}
+  .subtitle{font-size:11px;color:var(--muted);margin-top:2px;}
+  .header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .timer-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);line-height:1.9;}
+  .timer-box strong{color:var(--accent);}
+  .progress-bar{height:2px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:4px;}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),#0077b6);border-radius:2px;transition:width 1s linear;}
+  .btn-check{padding:9px 20px;background:linear-gradient(135deg,#00b4d8,#0077b6);border:none;border-radius:8px;color:white;font-size:13px;font-family:'Noto Sans KR',sans-serif;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(0,180,216,0.3);transition:all 0.2s;white-space:nowrap;}
+  .btn-check:hover{transform:translateY(-1px);}
+  .btn-check:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
 
-  .summary { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
-  .sum-card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:18px 20px; position:relative; overflow:hidden; }
-  .sum-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; }
-  .sum-card.total::before { background:linear-gradient(90deg,var(--accent),transparent); }
-  .sum-card.ok::before    { background:linear-gradient(90deg,var(--ok),transparent); }
-  .sum-card.warn::before  { background:linear-gradient(90deg,var(--warn),transparent); }
-  .sum-label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
-  .sum-value { font-family:'JetBrains Mono',monospace; font-size:36px; font-weight:600; margin-top:6px; }
-  .sum-card.total .sum-value { color:var(--accent); }
-  .sum-card.ok    .sum-value { color:var(--ok); }
-  .sum-card.warn  .sum-value { color:var(--warn); }
+  /* 헤더 시계 */
+  .header-clock{text-align:center;flex:1;min-width:160px;}
+  .clock-date{font-size:13px;color:var(--text);font-weight:600;margin-bottom:4px;}
+  .clock-time{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:600;color:var(--accent);letter-spacing:2px;line-height:1;}
+  .clock-kst{font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:1px;}
 
-  .last-check { font-size:12px; color:var(--muted); margin-bottom:16px; }
-  .last-check span { color:var(--accent); font-family:'JetBrains Mono',monospace; }
+  /* 요약 */
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+  .sum-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;position:relative;overflow:hidden;}
+  .sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+  .sum-card.total::before{background:linear-gradient(90deg,var(--accent),transparent);}
+  .sum-card.ok::before{background:linear-gradient(90deg,var(--ok),transparent);}
+  .sum-card.warn::before{background:linear-gradient(90deg,var(--warn),transparent);}
+  .sum-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:600;}
+  .sum-value{font-family:'JetBrains Mono',monospace;font-size:34px;font-weight:600;margin-top:5px;line-height:1;}
+  .sum-card.total .sum-value{color:var(--accent);}
+  .sum-card.ok .sum-value{color:var(--ok);}
+  .sum-card.warn .sum-value{color:var(--warn);}
 
-  .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+  .meta-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px;}
+  .last-check{font-size:12px;color:var(--muted);}
+  .last-check .time{color:var(--accent);font-family:'JetBrains Mono',monospace;font-weight:600;}
+  .legend{display:flex;align-items:center;gap:10px;font-size:11px;flex-wrap:wrap;}
+  .legend span{display:flex;align-items:center;gap:4px;}
+  .dot{width:7px;height:7px;border-radius:50%;display:inline-block;}
 
-  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; position:relative; overflow:hidden; transition:all 0.3s; }
-  .card:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,0.3); }
-  .card.ok   { border-left:3px solid var(--ok); }
-  .card.warn { border-left:3px solid var(--warn); animation:cardPulse 2s ease-in-out infinite; }
-  @keyframes cardPulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,82,82,0)} 50%{box-shadow:0 0 10px 2px rgba(255,82,82,0.15)} }
+  /* ── 주간 발행 현황 섹션 ── */
+  .weekly-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:22px;}
+  .section-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border);}
 
-  .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; gap:8px; }
-  .card-header-left { display:flex; align-items:center; gap:8px; }
-  .blog-num { font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); background:var(--panel); padding:2px 8px; border-radius:4px; border:1px solid var(--border); }
-  .blog-label { font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:700; color:#ffd700; background:rgba(255,215,0,0.1); padding:2px 10px; border-radius:4px; border:1px solid rgba(255,215,0,0.3); }
-  .badge { font-size:12px; font-weight:700; padding:4px 12px; border-radius:20px; white-space:nowrap; }
-  .badge-ok      { background:rgba(0,230,118,0.15); color:var(--ok);   border:1px solid rgba(0,230,118,0.3); }
-  .badge-warn    { background:rgba(255,82,82,0.15);  color:var(--warn); border:1px solid rgba(255,82,82,0.3); animation:badgePulse 1.5s ease-in-out infinite; }
-  .badge-loading { background:rgba(107,127,163,0.15); color:var(--muted); border:1px solid rgba(107,127,163,0.3); }
-  @keyframes badgePulse { 0%,100%{box-shadow:0 0 0 0 rgba(255,82,82,0.4)} 50%{box-shadow:0 0 0 4px rgba(255,82,82,0)} }
+  .weekly-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+  .weekly-row{background:#0d1624;border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .weekly-blog-name{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+  .weekly-id{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--accent);}
+  .weekly-label{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--gold);background:rgba(255,215,0,0.1);padding:1px 8px;border-radius:4px;border:1px solid rgba(255,215,0,0.25);}
 
-  .blog-id { font-family:'JetBrains Mono',monospace; font-size:15px; font-weight:600; color:var(--accent); margin-bottom:4px; }
-  .blog-url { font-size:11px; color:var(--muted); text-decoration:none; display:block; margin-bottom:14px; }
-  .blog-url:hover { color:var(--accent); }
+  .bars-wrap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;align-items:end;height:50px;margin-bottom:6px;}
+  .bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px;}
+  .bar-inner{width:100%;border-radius:3px 3px 0 0;min-height:3px;background:rgba(0,212,255,0.25);border:1px solid rgba(0,212,255,0.35);transition:height 0.5s ease;}
+  .bar-inner.is-today{background:rgba(0,230,118,0.35);border-color:rgba(0,230,118,0.55);}
+  .bar-num{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--accent);font-weight:600;line-height:1;}
+  .bar-num.is-today{color:var(--ok);}
+  .dates-wrap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .date-col{text-align:center;font-size:9px;color:var(--muted);line-height:1.5;}
+  .date-col.is-today{color:var(--ok);font-weight:700;}
 
-  .posts-table { background:#0d1624; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
-  .posts-header { display:grid; grid-template-columns:1fr 90px; padding:7px 14px; background:var(--panel); border-bottom:1px solid var(--border); }
-  .posts-header span { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
-  .post-row { display:grid; grid-template-columns:1fr 90px; padding:10px 14px; gap:8px; border-bottom:1px solid #1a2540; }
-  .post-row:last-child { border-bottom:none; }
-  .post-row:nth-child(even) { background:rgba(255,255,255,0.015); }
-  .post-title { font-size:12px; color:#c8d8e8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .post-time { font-size:11px; font-family:'JetBrains Mono',monospace; font-weight:700; text-align:right; white-space:nowrap; }
+  /* ── 블로그 카드 그리드 ── */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
 
-  .no-posts { font-size:12px; color:var(--warn); text-align:center; padding:20px 0; }
-  .no-posts small { color:var(--muted); display:block; margin-top:4px; font-size:11px; }
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;position:relative;overflow:hidden;transition:transform 0.25s,box-shadow 0.25s;}
+  .card:hover{transform:translateY(-2px);box-shadow:0 10px 35px rgba(0,0,0,0.3);}
+  .card.ok{border-left:3px solid var(--ok);}
+  .card.warn{border-left:3px solid var(--warn);animation:warnGlow 2s ease-in-out infinite;}
+  @keyframes warnGlow{0%,100%{box-shadow:0 0 0 0 rgba(255,82,82,0)}50%{box-shadow:0 0 10px 2px rgba(255,82,82,0.1)}}
 
-  .skeleton { display:flex; flex-direction:column; gap:8px; }
-  .skel-line { height:13px; background:var(--border); border-radius:4px; animation:shimmer 1.5s infinite; }
-  @keyframes shimmer { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+  .card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .card-header-left{display:flex;align-items:center;gap:7px;}
+  .blog-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);background:var(--panel);padding:2px 8px;border-radius:4px;border:1px solid var(--border);}
+  .blog-label-badge{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:var(--gold);background:rgba(255,215,0,0.1);padding:2px 9px;border-radius:4px;border:1px solid rgba(255,215,0,0.25);}
+  .badge{font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;white-space:nowrap;}
+  .badge-ok{background:rgba(0,230,118,0.12);color:var(--ok);border:1px solid rgba(0,230,118,0.25);}
+  .badge-warn{background:rgba(255,82,82,0.12);color:var(--warn);border:1px solid rgba(255,82,82,0.25);animation:badgePulse 1.5s ease-in-out infinite;}
+  .badge-loading{background:rgba(107,127,163,0.12);color:var(--muted);border:1px solid rgba(107,127,163,0.25);}
+  @keyframes badgePulse{0%,100%{opacity:1}50%{opacity:0.55}}
 
-  @media (max-width:700px) {
-    .grid { grid-template-columns:1fr; }
-    .summary { grid-template-columns:repeat(3,1fr); }
-    header { flex-direction:column; align-items:flex-start; }
+  .blog-title-row{display:flex;align-items:center;gap:8px;margin-bottom:3px;}
+  .blog-id{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:600;color:var(--accent);}
+  .blog-label-inline{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--gold);}
+  .blog-url{font-size:11px;color:var(--muted);text-decoration:none;display:block;margin-bottom:12px;}
+  .blog-url:hover{color:var(--accent);}
+
+  /* 오늘 발행 */
+  .today-box{display:flex;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:12px;}
+  .today-info{flex:1;}
+  .today-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .today-date{font-size:11px;color:var(--accent);font-family:'JetBrains Mono',monospace;font-weight:600;margin-top:2px;}
+  .today-num{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--ok);}
+  .today-unit{font-size:11px;color:var(--muted);}
+
+  /* 글 목록 */
+  .posts-table{background:#0d1624;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+  .posts-header{display:grid;grid-template-columns:1fr 85px;padding:7px 12px;background:var(--panel);border-bottom:1px solid var(--border);}
+  .posts-header span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+  .post-row{display:grid;grid-template-columns:1fr 85px;padding:9px 12px;gap:6px;border-bottom:1px solid #1a2540;}
+  .post-row:last-child{border-bottom:none;}
+  .post-row:nth-child(even){background:rgba(255,255,255,0.015);}
+  .post-row.hidden{display:none;}
+  .post-title{font-size:12px;color:#c8d8e8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .post-time{font-size:11px;font-family:'JetBrains Mono',monospace;font-weight:700;text-align:right;white-space:nowrap;}
+
+  /* 더 보기 버튼 */
+  .show-more-btn{width:100%;padding:9px;background:transparent;border:1px dashed var(--border);border-radius:0 0 10px 10px;color:var(--muted);font-size:12px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all 0.2s;margin-top:-1px;}
+  .show-more-btn:hover{background:rgba(0,212,255,0.05);color:var(--accent);border-color:rgba(0,212,255,0.3);}
+
+  .no-posts{font-size:12px;color:var(--warn);text-align:center;padding:18px 0;}
+  .no-posts small{color:var(--muted);display:block;margin-top:4px;font-size:11px;}
+
+  .skeleton{display:flex;flex-direction:column;gap:8px;}
+  .skel-line{height:13px;background:var(--border);border-radius:4px;animation:shimmer 1.5s infinite;}
+  @keyframes shimmer{0%,100%{opacity:0.25}50%{opacity:0.6}}
+
+  /* 모바일 */
+  @media(max-width:680px){
+    .grid{grid-template-columns:1fr;}
+    .weekly-grid{grid-template-columns:1fr;}
+    .summary{grid-template-columns:repeat(2,1fr);}
+    header{flex-direction:column;align-items:flex-start;}
+    .header-clock{text-align:left;}
+    .clock-time{font-size:22px;}
+    .sum-value{font-size:28px;}
   }
 </style>
 </head>
@@ -106,47 +157,76 @@
         <div class="subtitle">자동화 프로그램 동작 감시 · {{ warn_hours }}시간 기준</div>
       </div>
     </div>
+    <div class="header-clock">
+      <div class="clock-date" id="clockDate">—</div>
+      <div class="clock-time" id="clockTime">00:00:00</div>
+      <div class="clock-kst">🇰🇷 KOREA STANDARD TIME</div>
+    </div>
     <div class="header-right">
       <div class="timer-box">
-        <div>다음 갱신: <span id="countdown">30:00</span></div>
+        <div>다음 갱신 <strong id="countdown">30:00</strong></div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:100%"></div></div>
       </div>
-      <button class="btn btn-primary" id="checkBtn" onclick="checkAll()">🔄 지금 확인</button>
+      <button class="btn-check" id="checkBtn" onclick="checkAll()">🔄 지금 확인</button>
     </div>
   </header>
 
+  <!-- 요약 -->
   <div class="summary">
     <div class="sum-card total"><div class="sum-label">모니터링</div><div class="sum-value" id="totalCount">{{ blogs|length }}</div></div>
-    <div class="sum-card ok">  <div class="sum-label">✓ 정상</div>  <div class="sum-value" id="okCount">-</div></div>
-    <div class="sum-card warn"><div class="sum-label">⚠ 이상</div>  <div class="sum-value" id="warnCount">-</div></div>
+    <div class="sum-card ok">  <div class="sum-label">✓ 정상</div>  <div class="sum-value" id="okCount">—</div></div>
+    <div class="sum-card warn"><div class="sum-label">⚠ 이상</div>  <div class="sum-value" id="warnCount">—</div></div>
+    <div class="sum-card" style="border-top:2px solid var(--gold);"><div class="sum-label" style="color:var(--gold)">오늘 총 발행</div><div class="sum-value" style="color:var(--gold)" id="todayTotal">—</div></div>
   </div>
 
-  <div class="last-check">마지막 확인: <span id="lastCheck">-</span>&nbsp;·&nbsp;
-    <span style="color:#00e676">●</span> 1h이내 &nbsp;
-    <span style="color:#ffeb3b">●</span> 3h이내 &nbsp;
-    <span style="color:#e0eaf5">●</span> 6h이내 &nbsp;
-    <span style="color:#ff5252">●</span> 6h초과
+  <div class="meta-row">
+    <div class="last-check">마지막 확인: <span class="time" id="lastCheck">—</span></div>
+    <div class="legend">
+      <span><span class="dot" style="background:#00e676"></span>1h이내</span>
+      <span><span class="dot" style="background:#ffeb3b"></span>3h이내</span>
+      <span><span class="dot" style="background:#e0eaf5"></span>6h이내</span>
+      <span><span class="dot" style="background:#ff5252"></span>6h초과</span>
+    </div>
   </div>
 
+  <!-- 주간 발행 현황 -->
+  <div class="weekly-section">
+    <div class="section-title">📅 주간 발행 현황</div>
+    <div class="weekly-grid" id="weeklyGrid">
+      {% for blog in blogs %}
+      <div class="weekly-row" id="weekly-{{ loop.index0 }}">
+        <div class="weekly-blog-name">
+          <span class="weekly-id">{{ blog.id }}</span>
+          {% if blog.label %}<span class="weekly-label">{{ blog.label }}</span>{% endif %}
+        </div>
+        <div class="skeleton">
+          <div class="skel-line" style="width:100%;height:50px;"></div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 블로그 카드 -->
   <div class="grid" id="blogsGrid">
     {% for blog in blogs %}
     <div class="card loading" id="card-{{ loop.index0 }}">
       <div class="card-header">
         <div class="card-header-left">
           <span class="blog-num">BLOG #{{ blog.num }}</span>
-          {% if blog.label %}<span class="blog-label">{{ blog.label }}</span>{% endif %}
+          {% if blog.label %}<span class="blog-label-badge">{{ blog.label }}</span>{% endif %}
         </div>
-        <span class="badge badge-loading">⏳ 대기 중</span>
+        <span class="badge badge-loading">⏳ 확인 중</span>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div class="blog-title-row">
         <div class="blog-id">{{ blog.id }}</div>
-        {% if blog.label %}<span style="font-size:12px;color:#ffd700;font-weight:700;font-family:monospace">{{ blog.label }}</span>{% endif %}
+        {% if blog.label %}<span class="blog-label-inline">{{ blog.label }}</span>{% endif %}
       </div>
       <a class="blog-url" href="https://blog.naver.com/{{ blog.id }}" target="_blank">blog.naver.com/{{ blog.id }} ↗</a>
       <div class="skeleton">
         <div class="skel-line" style="width:100%"></div>
-        <div class="skel-line" style="width:85%"></div>
-        <div class="skel-line" style="width:70%"></div>
+        <div class="skel-line" style="width:80%"></div>
+        <div class="skel-line" style="width:90%"></div>
       </div>
     </div>
     {% endfor %}
@@ -155,97 +235,187 @@
 
 <script>
 const WARN_HOURS = {{ warn_hours }};
+const DAYS = ["일","월","화","수","목","금","토"];
 let countdownSec = 1800;
 let timerInterval;
 
-function timeColor(h) {
-  if (h > WARN_HOURS) return "#ff5252";
-  if (h <= 1) return "#00e676";
-  if (h <= 3) return "#ffeb3b";
-  return "#e0eaf5";
+// 시계
+function updateClock(){
+  const now=new Date();
+  const kst=new Date(now.getTime()+9*3600000);
+  const h=String(kst.getUTCHours()).padStart(2,"0");
+  const m=String(kst.getUTCMinutes()).padStart(2,"0");
+  const s=String(kst.getUTCSeconds()).padStart(2,"0");
+  document.getElementById("clockTime").textContent=`${h}:${m}:${s}`;
+  const y=kst.getUTCFullYear(), mo=kst.getUTCMonth()+1, d=kst.getUTCDate(), dow=DAYS[kst.getUTCDay()];
+  document.getElementById("clockDate").textContent=`${y}년 ${mo}월 ${d}일 (${dow})`;
+}
+setInterval(updateClock,1000);
+updateClock();
+
+function timeColor(h){
+  if(h>WARN_HOURS)return"#ff5252";
+  if(h<=1)return"#00e676";
+  if(h<=3)return"#ffeb3b";
+  return"#e0eaf5";
 }
 
-function checkAll() {
-  const btn = document.getElementById("checkBtn");
-  btn.disabled = true;
-  btn.textContent = "⏳ 확인 중...";
-
-  fetch("/api/check")
-    .then(r => r.json())
-    .then(data => {
-      if (data.error) { alert(data.error); return; }
-      renderCards(data.results);
-      document.getElementById("lastCheck").textContent = data.checked_at;
-      const ok   = data.results.filter(r => r.ok && r.posts?.[0]?.hoursAgo <= WARN_HOURS).length;
-      const warn = data.results.length - ok;
-      document.getElementById("okCount").textContent   = ok;
-      document.getElementById("warnCount").textContent = warn;
-      resetCountdown();
-    })
-    .catch(e => alert("서버 오류: " + e))
-    .finally(() => {
-      btn.disabled = false;
-      btn.textContent = "🔄 지금 확인";
-    });
+function getTodayKST(){
+  const now=new Date();
+  return new Date(now.getTime()+9*3600000).toISOString().slice(0,10);
 }
 
-function renderCards(results) {
-  results.forEach((r, i) => {
-    const card = document.getElementById("card-" + i);
-    if (!card) return;
-    const isOk = r.ok && r.posts?.length > 0 && r.posts[0].hoursAgo <= WARN_HOURS;
-    card.className = "card " + (isOk ? "ok" : "warn");
+function getTodayLabel(){
+  const now=new Date();
+  const kst=new Date(now.getTime()+9*3600000);
+  const m=kst.getUTCMonth()+1, d=kst.getUTCDate(), dow=DAYS[kst.getUTCDay()];
+  return `${m}월 ${d}일 (${dow})`;
+}
 
-    const labelHtml = r.label ? `<span class="blog-label">${r.label}</span>` : "";
+function formatDate(dateStr){
+  const d=new Date(dateStr+"T00:00:00+09:00");
+  return{short:`${d.getMonth()+1}/${d.getDate()}`, dow:DAYS[d.getDay()]};
+}
 
-    let postsHtml = "";
-    if (r.ok && r.posts && r.posts.length > 0) {
-      postsHtml = `
+// 주간 차트 렌더
+function renderWeekly(idx, blogId, label, history){
+  const el=document.getElementById("weekly-"+idx);
+  if(!el||!history)return;
+  const today=getTodayKST();
+  const maxCount=Math.max(...history.map(h=>h.count),1);
+  const labelHtml=label?`<span class="weekly-label">${label}</span>`:"";
+
+  const barsHtml=history.map(h=>{
+    const isToday=h.date===today;
+    const pct=Math.max((h.count/maxCount)*100,h.count>0?8:2);
+    return`<div class="bar-col">
+      <span class="bar-num${isToday?" is-today":""}">${h.count}</span>
+      <div class="bar-inner${isToday?" is-today":""}" style="height:${pct}%"></div>
+    </div>`;
+  }).join("");
+
+  const datesHtml=history.map(h=>{
+    const isToday=h.date===today;
+    const{short,dow}=formatDate(h.date);
+    return`<div class="date-col${isToday?" is-today":""}">${short}<br>${dow}</div>`;
+  }).join("");
+
+  el.innerHTML=`
+    <div class="weekly-blog-name">
+      <span class="weekly-id">${blogId}</span>${labelHtml}
+    </div>
+    <div class="bars-wrap">${barsHtml}</div>
+    <div class="dates-wrap">${datesHtml}</div>`;
+}
+
+// 더 보기 토글
+function toggleMore(blogIdx){
+  const card=document.getElementById("card-"+blogIdx);
+  const hiddenRows=card.querySelectorAll(".post-row.hidden");
+  const btn=card.querySelector(".show-more-btn");
+  if(hiddenRows.length>0){
+    hiddenRows.forEach(r=>r.classList.remove("hidden"));
+    btn.textContent="▲ 접기";
+  } else {
+    const allRows=card.querySelectorAll(".post-row");
+    allRows.forEach((r,i)=>{if(i>=5)r.classList.add("hidden");});
+    btn.textContent=`▼ 더 보기 (${allRows.length-5}개)`;
+  }
+}
+
+// 카드 렌더
+function renderCards(results){
+  results.forEach((r,i)=>{
+    const card=document.getElementById("card-"+i);
+    if(!card)return;
+    const isOk=r.ok&&r.posts?.length>0&&r.posts[0].hoursAgo<=WARN_HOURS;
+    card.className="card "+(isOk?"ok":"warn");
+
+    const labelBadge=r.label?`<span class="blog-label-badge">${r.label}</span>`:"";
+    const labelInline=r.label?`<span class="blog-label-inline">${r.label}</span>`:"";
+
+    const todayHtml=`
+      <div class="today-box">
+        <div class="today-info">
+          <div class="today-label">오늘 발행</div>
+          <div class="today-date">${getTodayLabel()}</div>
+        </div>
+        <div><span class="today-num">${r.today_count||0}</span><span class="today-unit">개</span></div>
+      </div>`;
+
+    let postsHtml="";
+    if(r.ok&&r.posts&&r.posts.length>0){
+      const rowsHtml=r.posts.map((p,pi)=>`
+        <div class="post-row${pi>=5?" hidden":""}">
+          <span class="post-title">${p.title}</span>
+          <span class="post-time" style="color:${timeColor(p.hoursAgo)}">${p.timeLabel}</span>
+        </div>`).join("");
+
+      const moreBtn=r.posts.length>5
+        ?`<button class="show-more-btn" onclick="toggleMore(${i})">▼ 더 보기 (${r.posts.length-5}개)</button>`:"";
+
+      postsHtml=`
         <div class="posts-table">
           <div class="posts-header"><span>글 제목</span><span style="text-align:right">작성</span></div>
-          ${r.posts.map(p => `
-            <div class="post-row">
-              <span class="post-title">${p.title}</span>
-              <span class="post-time" style="color:${timeColor(p.hoursAgo)}">${p.timeLabel}</span>
-            </div>
-          `).join("")}
-        </div>`;
+          ${rowsHtml}
+        </div>${moreBtn}`;
     } else {
-      postsHtml = `<div class="no-posts">⚠ 최근 글을 찾을 수 없어요<small>${r.error || "블로그 ID를 확인해주세요"}</small></div>`;
+      postsHtml=`<div class="no-posts">⚠ 최근 글을 찾을 수 없어요<small>${r.error||"블로그 ID를 확인해주세요"}</small></div>`;
     }
 
-    card.innerHTML = `
+    card.innerHTML=`
       <div class="card-header">
         <div class="card-header-left">
-          <span class="blog-num">BLOG #${i+1}</span>
-          ${labelHtml}
+          <span class="blog-num">BLOG #${i+1}</span>${labelBadge}
         </div>
-        <span class="badge ${isOk ? "badge-ok" : "badge-warn"}">${isOk ? "✓ 정상" : "⚠ 이상 감지"}</span>
+        <span class="badge ${isOk?"badge-ok":"badge-warn"}">${isOk?"✓ 정상":"⚠ 이상 감지"}</span>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
-        <div class="blog-id">${r.blog_id}</div>
-        ${r.label ? `<span style="font-size:12px;color:#ffd700;font-weight:700;font-family:monospace">${r.label}</span>` : ""}
+      <div class="blog-title-row">
+        <div class="blog-id">${r.blog_id}</div>${labelInline}
       </div>
       <a class="blog-url" href="https://blog.naver.com/${r.blog_id}" target="_blank">blog.naver.com/${r.blog_id} ↗</a>
-      ${postsHtml}
-    `;
+      ${todayHtml}
+      ${postsHtml}`;
+
+    // 주간 차트
+    renderWeekly(i, r.blog_id, r.label, r.history);
   });
 }
 
-function resetCountdown() {
-  countdownSec = 1800;
-  if (timerInterval) clearInterval(timerInterval);
-  timerInterval = setInterval(() => {
-    countdownSec--;
-    if (countdownSec <= 0) { checkAll(); return; }
-    const m = String(Math.floor(countdownSec/60)).padStart(2,"0");
-    const s = String(countdownSec%60).padStart(2,"0");
-    document.getElementById("countdown").textContent = m+":"+s;
-    document.getElementById("progressFill").style.width = (countdownSec/1800*100)+"%";
-  }, 1000);
+function checkAll(){
+  const btn=document.getElementById("checkBtn");
+  btn.disabled=true; btn.textContent="⏳ 확인 중...";
+  fetch("/api/check")
+    .then(r=>r.json())
+    .then(data=>{
+      if(data.error){alert(data.error);return;}
+      renderCards(data.results);
+      document.getElementById("lastCheck").textContent=data.checked_at;
+      const ok=data.results.filter(r=>r.ok&&r.posts?.[0]?.hoursAgo<=WARN_HOURS).length;
+      document.getElementById("okCount").textContent=ok;
+      document.getElementById("warnCount").textContent=data.results.length-ok;
+      const todayTotal=data.results.reduce((sum,r)=>sum+(r.today_count||0),0);
+      document.getElementById("todayTotal").textContent=todayTotal;
+      resetCountdown();
+    })
+    .catch(e=>alert("서버 오류: "+e))
+    .finally(()=>{btn.disabled=false;btn.textContent="🔄 지금 확인";});
 }
 
-window.onload = () => checkAll();
+function resetCountdown(){
+  countdownSec=1800;
+  if(timerInterval)clearInterval(timerInterval);
+  timerInterval=setInterval(()=>{
+    countdownSec--;
+    if(countdownSec<=0){checkAll();return;}
+    const m=String(Math.floor(countdownSec/60)).padStart(2,"0");
+    const s=String(countdownSec%60).padStart(2,"0");
+    document.getElementById("countdown").textContent=m+":"+s;
+    document.getElementById("progressFill").style.width=(countdownSec/1800*100)+"%";
+  },1000);
+}
+
+window.onload=()=>checkAll();
 </script>
 </body>
 </html>
