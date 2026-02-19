@@ -8,7 +8,7 @@ import os
 app = Flask(__name__)
 
 KST = timezone(timedelta(hours=9))
-WARN_HOURS = 12
+WARN_HOURS = 6
 
 BLOG_IDS = [
     os.environ.get("BLOG1", ""),
@@ -17,6 +17,15 @@ BLOG_IDS = [
     os.environ.get("BLOG4", ""),
     os.environ.get("BLOG5", ""),
     os.environ.get("BLOG6", ""),
+]
+
+BLOG_LABELS = [
+    os.environ.get("LABEL1", ""),
+    os.environ.get("LABEL2", ""),
+    os.environ.get("LABEL3", ""),
+    os.environ.get("LABEL4", ""),
+    os.environ.get("LABEL5", ""),
+    os.environ.get("LABEL6", ""),
 ]
 
 
@@ -34,7 +43,7 @@ def fetch_blog_posts(blog_id):
     try:
         root = ET.fromstring(xml_data)
         items = root.findall(".//item")
-    except Exception as e:
+    except:
         return {"ok": False, "error": "XML 파싱 오류", "posts": []}
 
     if not items:
@@ -52,16 +61,16 @@ def fetch_blog_posts(blog_id):
             h = int(elapsed)
             m = int((elapsed % 1) * 60)
             if elapsed < 1:
-                label = f"{m}분 전"
+                lbl = f"{m}분 전"
             elif elapsed < 24:
-                label = f"{h}시간 {m}분 전"
+                lbl = f"{h}시간 {m}분 전"
             else:
-                label = f"{int(elapsed//24)}일 전"
+                lbl = f"{int(elapsed//24)}일 전"
 
             posts.append({
                 "title": title,
                 "hoursAgo": round(elapsed, 1),
-                "timeLabel": label
+                "timeLabel": lbl
             })
         except:
             continue
@@ -71,20 +80,24 @@ def fetch_blog_posts(blog_id):
 
 @app.route("/")
 def index():
-    blog_ids = [b for b in BLOG_IDS if b]
-    return render_template("index.html", blog_ids=blog_ids)
+    blogs = []
+    for i, (bid, blabel) in enumerate(zip(BLOG_IDS, BLOG_LABELS)):
+        if bid:
+            blogs.append({"id": bid, "label": blabel, "num": i + 1})
+    return render_template("index.html", blogs=blogs, warn_hours=WARN_HOURS)
 
 
 @app.route("/api/check")
 def check_all():
-    blog_ids = [b for b in BLOG_IDS if b]
     results = []
-    for blog_id in blog_ids:
-        result = fetch_blog_posts(blog_id)
-        results.append({"blog_id": blog_id, **result})
+    for bid, blabel in zip(BLOG_IDS, BLOG_LABELS):
+        if not bid:
+            continue
+        result = fetch_blog_posts(bid)
+        results.append({"blog_id": bid, "label": blabel, **result})
 
     now_str = datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S")
-    return jsonify({"results": results, "checked_at": now_str})
+    return jsonify({"results": results, "checked_at": now_str, "warn_hours": WARN_HOURS})
 
 
 if __name__ == "__main__":
