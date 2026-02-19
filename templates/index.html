@@ -138,7 +138,10 @@
         </div>
         <span class="badge badge-loading">⏳ 대기 중</span>
       </div>
-      <div class="blog-id">{{ blog.id }}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <div class="blog-id">{{ blog.id }}</div>
+        {% if blog.label %}<span style="font-size:12px;color:#ffd700;font-weight:700;font-family:monospace">{{ blog.label }}</span>{% endif %}
+      </div>
       <a class="blog-url" href="https://blog.naver.com/{{ blog.id }}" target="_blank">blog.naver.com/{{ blog.id }} ↗</a>
       <div class="skeleton">
         <div class="skel-line" style="width:100%"></div>
@@ -219,7 +222,10 @@ function renderCards(results) {
         </div>
         <span class="badge ${isOk ? "badge-ok" : "badge-warn"}">${isOk ? "✓ 정상" : "⚠ 이상 감지"}</span>
       </div>
-      <div class="blog-id">${r.blog_id}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+        <div class="blog-id">${r.blog_id}</div>
+        ${r.label ? `<span style="font-size:12px;color:#ffd700;font-weight:700;font-family:monospace">${r.label}</span>` : ""}
+      </div>
       <a class="blog-url" href="https://blog.naver.com/${r.blog_id}" target="_blank">blog.naver.com/${r.blog_id} ↗</a>
       ${postsHtml}
     `;
