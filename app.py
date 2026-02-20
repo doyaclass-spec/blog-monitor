@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, request
 import urllib.request
 import urllib.parse
 import xml.etree.ElementTree as ET
