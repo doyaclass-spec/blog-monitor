@@ -241,7 +241,11 @@ def send_kakao_alert(blog_id=None, hours=None, label=None):
     )
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
-            return jsonify({"status": "ok"})
+            result = json.loads(resp.read().decode())
+            return jsonify({"status": "ok", "result": result})
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
+        return jsonify({"status": "error", "code": e.code, "reason": body})
     except Exception as e:
         return jsonify({"status": "error", "reason": str(e)})
 
