@@ -222,7 +222,14 @@ def send_kakao_alert(blog_id=None, hours=None, label=None):
         hours = request.args.get("hours", "테스트")
         label = request.args.get("label", "")
 
-    msg = f"⚠ 블로그 이상 감지!\n\n{blog_id} ({label})\n마지막 글: {hours}시간 전\n기준 초과: {WARN_HOURS}시간\n\n확인: https://blog-monitor-p4nn.onrender.com"
+    # 3시간 이내 같은 블로그 알림 중복 방지
+    now = datetime.utcnow()
+    last = alert_last_sent.get(blog_id)
+    if last and (now - last).total_seconds() < ALERT_INTERVAL_HOURS * 3600:
+        return jsonify({"status": "skip", "reason": f"3시간 이내 이미 발송됨"})
+    alert_last_sent[blog_id] = now
+
+    msg = f"🚨 블로그 모니터 이상 감지!\n\n대표님!!\n{label}가 {hours}시간째 글을 안 쓰고 있어요.\n확인해주세요!\n\n👉 https://blog-monitor-p4nn.onrender.com"
     data = json.dumps({
         "object_type": "text",
         "text": msg,
