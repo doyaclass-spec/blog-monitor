@@ -379,14 +379,14 @@ header{margin-bottom:36px;border-bottom:1px solid var(--border);padding-bottom:0
 .live-bar{
   display:flex;align-items:center;gap:10px;
   margin-bottom:14px;padding:10px 14px;
-  background:rgba(0,230,118,0.04);
-  border:1px solid rgba(0,230,118,0.15);
+  background:rgba(0,0,0,0.35);
+  border:1px solid rgba(0,230,118,0.25);
   border-radius:10px;
   position:relative;overflow:hidden;
 }
 .live-bar::before{
   content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,rgba(0,230,118,0.3),transparent);
+  background:linear-gradient(90deg,transparent,rgba(0,230,118,0.4),transparent);
 }
 .live-dot{
   width:8px;height:8px;border-radius:50%;
@@ -401,16 +401,18 @@ header{margin-bottom:36px;border-bottom:1px solid var(--border);padding-bottom:0
   font-family:'JetBrains Mono',monospace;
   font-size:10px;font-weight:700;
   color:var(--ok);letter-spacing:2.5px;
+  flex-shrink:0;
 }
 .live-typing{
-  margin-left:auto;font-size:12px;
-  color:#6a9fc8;font-weight:500;
+  margin-left:8px;font-size:12px;
+  color:#e0f0ff;font-weight:600;
   min-width:0;overflow:hidden;
-  white-space:nowrap;
+  white-space:nowrap;flex:1;
+  text-shadow:0 0 8px rgba(220,240,255,0.3);
 }
 .live-typing .cursor{
   display:inline-block;width:2px;height:13px;
-  background:var(--accent);margin-left:2px;
+  background:#e0f0ff;margin-left:2px;
   vertical-align:middle;
   animation:blink 0.8s step-end infinite;
 }
@@ -769,38 +771,57 @@ let countdownSec=1800;
 let timerInterval;
 
 /* ── 타이핑 애니메이션 ── */
-const FAKE_TITLES=[
-  "삼성 갤럭시 S25 울트라 1년 사용 후기 장단점 정리",
-  "다이슨 에어랩 vs 샤크 플렉스스타일 비교 리뷰",
-  "2026년 자동차 취등록세 계산 방법 완벽 정리",
-  "제주도 4박5일 여행 일정 추천 숙소 맛집 총정리",
-  "LG 그램 Pro 16 실사용 리뷰 배터리 성능 체크",
-  "쿠팡 로켓배송 vs 네이버 스마트스토어 가격 비교",
-  "갓성비 공기청정기 추천 TOP5 미세먼지 제거율",
-  "한국 주식 시장 2026년 전망 투자 전략 정리",
-  "강남 맛집 주차 가능한 한우 레스토랑 솔직 후기",
-  "애플 맥북 에어 M3 리뷰 1개월 사용 소감",
+/* ── 5단계 AI 작성 프로세스 ── */
+const AI_STEPS=[
+  {text:"블로그 주제 찾는 중",        dots:true,  duration:120000},  // 2분
+  {text:"키워드 및 트렌드 분석 중",    dots:true,  duration:180000},  // 3분
+  {text:"블로그 구조 설계 중",         dots:true,  duration:120000},  // 2분
+  {text:"AI 본문 작성 중",            dots:true,  duration:600000},  // 10분 (핵심)
+  {text:"본문 교정 및 다듬는 중",      dots:true,  duration:300000},  // 5분
+  {text:"제목 및 태그 최적화 중",      dots:true,  duration:240000},  // 4분
+  {text:"발행 준비 완료",             dots:false, duration:240000},  // 4분
+  // 총합 1800초 = 30분
 ];
-let typingIntervals={};
+let stepTimers={};
 
-function startTyping(el){
-  const idx=Math.floor(Math.random()*FAKE_TITLES.length);
-  const title=FAKE_TITLES[idx];
-  let pos=0;
+function runSteps(el, stepIdx){
   const textEl=el.querySelector('.typing-text');
-  const cursorEl=el.querySelector('.cursor');
+  const dotsEl=el.querySelector('.step-dots');
   if(!textEl)return;
-  textEl.textContent='';
-  clearInterval(typingIntervals[el.id]);
-  typingIntervals[el.id]=setInterval(()=>{
-    if(pos<title.length){
-      textEl.textContent=title.slice(0,++pos);
+
+  // 랜덤 시작 오프셋으로 카드별 다른 단계에서 시작
+  const idx=stepIdx % AI_STEPS.length;
+  const step=AI_STEPS[idx];
+
+  textEl.textContent=step.text;
+
+  // 점 애니메이션
+  if(dotsEl){
+    if(step.dots){
+      dotsEl.style.display='inline';
+      let d=0;
+      clearInterval(stepTimers[el.id+'_dot']);
+      stepTimers[el.id+'_dot']=setInterval(()=>{
+        d=(d+1)%4;
+        dotsEl.textContent='.'.repeat(d);
+      },400);
     } else {
-      clearInterval(typingIntervals[el.id]);
-      // 2.5초 후 다시 시작
-      setTimeout(()=>startTyping(el),2500);
+      dotsEl.style.display='none';
+      clearInterval(stepTimers[el.id+'_dot']);
     }
-  },55);
+  }
+
+  // 다음 단계로
+  clearTimeout(stepTimers[el.id]);
+  stepTimers[el.id]=setTimeout(()=>{
+    runSteps(el, idx+1);
+  }, step.duration);
+}
+
+function startTyping(el, cardIdx){
+  // 카드마다 다른 단계에서 시작 (랜덤)
+  const startStep=Math.floor(Math.random()*AI_STEPS.length);
+  runSteps(el, startStep);
 }
 
 /* ── 시계 ── */
@@ -944,7 +965,7 @@ function renderCards(results){
       ${isOk?`<div class="live-bar" id="${liveId}">
         <span class="live-dot"></span>
         <span class="live-text">LIVE</span>
-        <span class="live-typing"><span class="typing-text"></span><span class="cursor"></span></span>
+        <span class="live-typing"><span class="typing-text"></span><span class="step-dots"></span><span class="cursor"></span></span>
       </div>`:""}
       <div class="blog-title-row">
         <div class="blog-id"><span class="mask-real">${r.blog_id}</span><span class="mask-fake">${maskedId}</span></div>
@@ -959,7 +980,7 @@ function renderCards(results){
     // 타이핑 애니메이션 시작
     if(isOk){
       const liveEl=document.getElementById(liveId);
-      if(liveEl) setTimeout(()=>startTyping(liveEl), i*300);
+      if(liveEl) setTimeout(()=>startTyping(liveEl, i), i*800);
     }
 
     renderWeekly(i,r.blog_id,r.label,r.history);
