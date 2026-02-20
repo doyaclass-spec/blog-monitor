@@ -34,9 +34,13 @@
   .btn-check:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
   .btn-hide{padding:9px 16px;background:#1e2d45;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:13px;font-family:'Noto Sans KR',sans-serif;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
   .btn-hide.active{background:rgba(255,82,82,0.15);border-color:var(--warn);color:var(--warn);}
-  .hide-mode .sensitive{filter:blur(6px);user-select:none;pointer-events:none;}
+  /* HIDE 모드 마스킹 */
+  .mask-real{display:inline;}
+  .mask-fake{display:none;font-family:'JetBrains Mono',monospace;color:transparent;background:var(--muted);border-radius:3px;padding:0 2px;user-select:none;opacity:0.35;}
+  .hide-mode .mask-real{display:none !important;}
+  .hide-mode .mask-fake{display:inline !important;}
   .hide-mode .sensitive-link{pointer-events:none;text-decoration:none;cursor:default;}
-  .post-title-link{color:#c8d8e8;text-decoration:none;}
+  .post-title-link{color:#c8d8e8;text-decoration:none;overflow:hidden;display:block;min-width:0;}
   .post-title-link:hover{color:var(--accent);text-decoration:underline;}
 
   /* 헤더 시계 */
@@ -121,9 +125,9 @@
 
   /* 글 목록 */
   .posts-table{background:#0d1624;border:1px solid var(--border);border-radius:10px;overflow:hidden;}
-  .posts-header{display:grid;grid-template-columns:1fr 85px;padding:7px 12px;background:var(--panel);border-bottom:1px solid var(--border);}
+  .posts-header{display:grid;grid-template-columns:1fr 100px;padding:7px 12px;background:var(--panel);border-bottom:1px solid var(--border);}
   .posts-header span{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
-  .post-row{display:grid;grid-template-columns:1fr 85px;padding:9px 12px;gap:6px;border-bottom:1px solid #1a2540;}
+  .post-row{display:grid;grid-template-columns:1fr 100px;padding:9px 12px;gap:6px;border-bottom:1px solid #1a2540;align-items:center;}
   .post-row:last-child{border-bottom:none;}
   .post-row:nth-child(even){background:rgba(255,255,255,0.015);}
   .post-row.hidden{display:none;}
@@ -153,7 +157,7 @@
   }
 </style>
 </head>
-<body>
+<body class="hide-mode">
 <div class="wrap">
   <header>
     <div class="logo">
@@ -226,10 +230,16 @@
         <span class="badge badge-loading">⏳ 확인 중</span>
       </div>
       <div class="blog-title-row">
-        <div class="blog-id sensitive">{{ blog.id }}</div>
+        <div class="blog-id">
+          <span class="mask-real">{{ blog.id }}</span>
+          <span class="mask-fake">██████████</span>
+        </div>
         {% if blog.label %}<span class="blog-label-inline">{{ blog.label }}</span>{% endif %}
       </div>
-      <a class="blog-url sensitive sensitive-link" href="https://blog.naver.com/{{ blog.id }}" target="_blank">blog.naver.com/{{ blog.id }} ↗</a>
+      <a class="blog-url sensitive-link" href="https://blog.naver.com/{{ blog.id }}" target="_blank">
+        <span class="mask-real">blog.naver.com/{{ blog.id }} ↗</span>
+        <span class="mask-fake">blog.naver.com/██████████ ↗</span>
+      </a>
       <div class="skeleton">
         <div class="skel-line" style="width:100%"></div>
         <div class="skel-line" style="width:80%"></div>
@@ -245,6 +255,21 @@ const WARN_HOURS = {{ warn_hours }};
 const DAYS = ["일","월","화","수","목","금","토"];
 let countdownSec = 1800;
 let timerInterval;
+
+// 숨김 모드 토글
+function toggleHide(){
+  const body=document.body;
+  const btn=document.getElementById("hideBtn");
+  if(body.classList.contains("hide-mode")){
+    body.classList.remove("hide-mode");
+    btn.textContent="👁 HIDE OFF";
+    btn.classList.remove("active");
+  } else {
+    body.classList.add("hide-mode");
+    btn.textContent="🙈 HIDE ON";
+    btn.classList.add("active");
+  }
+}
 
 // 시계
 function updateClock(){
@@ -309,7 +334,7 @@ function renderWeekly(idx, blogId, label, history){
 
   el.innerHTML=`
     <div class="weekly-blog-name">
-      <span class="weekly-id sensitive">${blogId}</span>${labelHtml}
+      <span class="weekly-id"><span class="mask-real">${blogId}</span><span class="mask-fake">██████████</span></span>${labelHtml}
     </div>
     <div class="bars-wrap">${barsHtml}</div>
     <div class="dates-wrap">${datesHtml}</div>`;
@@ -352,9 +377,14 @@ function renderCards(results){
 
     let postsHtml="";
     if(r.ok&&r.posts&&r.posts.length>0){
+      const maskedId = "██████████";
+      const titleMask = "█████████████████████████";
+
       const rowsHtml=r.posts.map((p,pi)=>`
         <div class="post-row${pi>=5?" hidden":""}">
-          <a class="post-title-link sensitive-link sensitive" href="${p.link}" target="_blank"><span class="post-title">${p.title}</span></a>
+          <a class="post-title-link sensitive-link" href="${p.link}" target="_blank">
+            <span class="post-title"><span class="mask-real">${p.title}</span><span class="mask-fake">${titleMask}</span></span>
+          </a>
           <span class="post-time" style="color:${timeColor(p.hoursAgo)}">${p.timeLabel}</span>
         </div>`).join("");
 
@@ -370,7 +400,7 @@ function renderCards(results){
       postsHtml=`<div class="no-posts">⚠ 최근 글을 찾을 수 없어요<small>${r.error||"블로그 ID를 확인해주세요"}</small></div>`;
     }
 
-    card.innerHTML=`
+      card.innerHTML=`
       <div class="card-header">
         <div class="card-header-left">
           <span class="blog-num">BLOG #${i+1}</span>${labelBadge}
@@ -378,9 +408,12 @@ function renderCards(results){
         <span class="badge ${isOk?"badge-ok":"badge-warn"}">${isOk?"✓ 정상":"⚠ 이상 감지"}</span>
       </div>
       <div class="blog-title-row">
-        <div class="blog-id">${r.blog_id}</div>${labelInline}
+        <div class="blog-id"><span class="mask-real">${r.blog_id}</span><span class="mask-fake">${maskedId}</span></div>${labelInline}
       </div>
-      <a class="blog-url" href="https://blog.naver.com/${r.blog_id}" target="_blank">blog.naver.com/${r.blog_id} ↗</a>
+      <a class="blog-url sensitive-link" href="https://blog.naver.com/${r.blog_id}" target="_blank">
+        <span class="mask-real">blog.naver.com/${r.blog_id} ↗</span>
+        <span class="mask-fake">blog.naver.com/${maskedId} ↗</span>
+      </a>
       ${todayHtml}
       ${postsHtml}`;
 
