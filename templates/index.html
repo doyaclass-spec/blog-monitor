@@ -207,7 +207,7 @@
       {% for blog in blogs %}
       <div class="weekly-row" id="weekly-{{ loop.index0 }}">
         <div class="weekly-blog-name">
-          <span class="weekly-id">{{ blog.id }}</span>
+          <span class="weekly-id"><span class="mask-real">{{ blog.id }}</span><span class="mask-fake">██████████</span></span>
           {% if blog.label %}<span class="weekly-label">{{ blog.label }}</span>{% endif %}
         </div>
         <div class="skeleton">
@@ -365,6 +365,8 @@ function renderCards(results){
 
     const labelBadge=r.label?`<span class="blog-label-badge">${r.label}</span>`:"";
     const labelInline=r.label?`<span class="blog-label-inline">${r.label}</span>`:"";
+    const maskedId="██████████";
+    const titleMask="█████████████████████████";
 
     const todayHtml=`
       <div class="today-box">
@@ -377,9 +379,6 @@ function renderCards(results){
 
     let postsHtml="";
     if(r.ok&&r.posts&&r.posts.length>0){
-      const maskedId = "██████████";
-      const titleMask = "█████████████████████████";
-
       const rowsHtml=r.posts.map((p,pi)=>`
         <div class="post-row${pi>=5?" hidden":""}">
           <a class="post-title-link sensitive-link" href="${p.link}" target="_blank">
