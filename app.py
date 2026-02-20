@@ -157,6 +157,27 @@ def record_daily():
     return jsonify({"status": "ok", "recorded": saved})
 
 
+@app.route("/oauth")
+def oauth_callback():
+    """카카오 코드만 표시 - 토큰 교환 안 함"""
+    code = request.args.get("code", "")
+    if not code:
+        return "<h2>코드가 없어요</h2>"
+    return f"""
+    <html><head><meta charset="UTF-8">
+    <style>body{{font-family:sans-serif;max-width:600px;margin:50px auto;padding:20px}}
+    .box{{background:#e8f5e9;padding:20px;border-radius:10px;word-break:break-all;font-family:monospace;font-size:12px}}
+    .btn{{padding:12px 24px;background:#4CAF50;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer;margin-top:10px}}
+    </style></head><body>
+    <h2>✅ 코드 발급 성공!</h2>
+    <p>아래 코드를 복사해서 HTML 파일 2단계에 붙여넣으세요:</p>
+    <div class="box" id="code">{code}</div>
+    <br>
+    <button class="btn" onclick="navigator.clipboard.writeText('{code}');alert('복사됐어요!')">📋 복사</button>
+    </body></html>
+    """
+
+
 @app.route("/kakao-auth")
 def kakao_auth():
     """카카오 토큰 발급 페이지"""
