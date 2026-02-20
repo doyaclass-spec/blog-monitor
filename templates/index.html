@@ -32,6 +32,12 @@
   .btn-check{padding:9px 20px;background:linear-gradient(135deg,#00b4d8,#0077b6);border:none;border-radius:8px;color:white;font-size:13px;font-family:'Noto Sans KR',sans-serif;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(0,180,216,0.3);transition:all 0.2s;white-space:nowrap;}
   .btn-check:hover{transform:translateY(-1px);}
   .btn-check:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+  .btn-hide{padding:9px 16px;background:#1e2d45;border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:13px;font-family:'Noto Sans KR',sans-serif;font-weight:600;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .btn-hide.active{background:rgba(255,82,82,0.15);border-color:var(--warn);color:var(--warn);}
+  .hide-mode .sensitive{filter:blur(6px);user-select:none;pointer-events:none;}
+  .hide-mode .sensitive-link{pointer-events:none;text-decoration:none;cursor:default;}
+  .post-title-link{color:#c8d8e8;text-decoration:none;}
+  .post-title-link:hover{color:var(--accent);text-decoration:underline;}
 
   /* 헤더 시계 */
   .header-clock{text-align:center;flex:1;min-width:160px;}
@@ -167,6 +173,7 @@
         <div>다음 갱신 <strong id="countdown">30:00</strong></div>
         <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:100%"></div></div>
       </div>
+      <button id="hideBtn" class="btn-hide active" onclick="toggleHide()">🙈 HIDE ON</button>
       <button class="btn-check" id="checkBtn" onclick="checkAll()">🔄 지금 확인</button>
     </div>
   </header>
@@ -219,10 +226,10 @@
         <span class="badge badge-loading">⏳ 확인 중</span>
       </div>
       <div class="blog-title-row">
-        <div class="blog-id">{{ blog.id }}</div>
+        <div class="blog-id sensitive">{{ blog.id }}</div>
         {% if blog.label %}<span class="blog-label-inline">{{ blog.label }}</span>{% endif %}
       </div>
-      <a class="blog-url" href="https://blog.naver.com/{{ blog.id }}" target="_blank">blog.naver.com/{{ blog.id }} ↗</a>
+      <a class="blog-url sensitive sensitive-link" href="https://blog.naver.com/{{ blog.id }}" target="_blank">blog.naver.com/{{ blog.id }} ↗</a>
       <div class="skeleton">
         <div class="skel-line" style="width:100%"></div>
         <div class="skel-line" style="width:80%"></div>
@@ -302,7 +309,7 @@ function renderWeekly(idx, blogId, label, history){
 
   el.innerHTML=`
     <div class="weekly-blog-name">
-      <span class="weekly-id">${blogId}</span>${labelHtml}
+      <span class="weekly-id sensitive">${blogId}</span>${labelHtml}
     </div>
     <div class="bars-wrap">${barsHtml}</div>
     <div class="dates-wrap">${datesHtml}</div>`;
@@ -347,7 +354,7 @@ function renderCards(results){
     if(r.ok&&r.posts&&r.posts.length>0){
       const rowsHtml=r.posts.map((p,pi)=>`
         <div class="post-row${pi>=5?" hidden":""}">
-          <span class="post-title">${p.title}</span>
+          <a class="post-title-link sensitive-link sensitive" href="${p.link}" target="_blank"><span class="post-title">${p.title}</span></a>
           <span class="post-time" style="color:${timeColor(p.hoursAgo)}">${p.timeLabel}</span>
         </div>`).join("");
 
