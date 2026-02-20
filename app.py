@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify
 import urllib.request
+import urllib.parse
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
@@ -154,6 +155,73 @@ def record_daily():
         supabase_request("POST", "blog_stats?on_conflict=blog_id,date", data)
         saved.append({"blog_id": bid, "date": today_str, "count": count})
     return jsonify({"status": "ok", "recorded": saved})
+
+
+@app.route("/kakao-auth")
+def kakao_auth():
+    """카카오 토큰 발급 페이지"""
+    code = request.args.get("code")
+    if not code:
+        client_id = os.environ.get("KAKAO_CLIENT_ID", "")
+        redirect_uri = os.environ.get("KAKAO_REDIRECT_URI", "")
+        auth_url = f"https://kauth.kakao.com/oauth/authorize?client_id={client_id}&redirect_uri={redirect_uri}&response_type=code"
+        return f'''<a href="{auth_url}">카카오 로그인</a>'''
+
+    # 코드로 토큰 발급
+    client_id = os.environ.get("KAKAO_CLIENT_ID", "")
+    redirect_uri = os.environ.get("KAKAO_REDIRECT_URI", "")
+    token_url = "https://kauth.kakao.com/oauth/token"
+    data = f"grant_type=authorization_code&client_id={client_id}&redirect_uri={redirect_uri}&code={code}"
+    req = urllib.request.Request(token_url, data=data.encode(), headers={"Content-Type": "application/x-www-form-urlencoded"}, method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            access_token = result.get("access_token", "")
+            refresh_token = result.get("refresh_token", "")
+            return f"""
+            <h2>✅ 토큰 발급 성공!</h2>
+            <p><b>Access Token:</b><br><code>{access_token}</code></p>
+            <p><b>Refresh Token:</b><br><code>{refresh_token}</code></p>
+            <p>위 두 토큰을 Render 환경변수에 저장하세요!</p>
+            """
+    except Exception as e:
+        return f"<h2>❌ 오류: {e}</h2>"
+
+
+@app.route("/api/send-kakao", methods=["GET", "POST"])
+def send_kakao_alert(blog_id=None, hours=None, label=None):
+    """카카오톡 나에게 보내기"""
+    token = os.environ.get("KAKAO_ACCESS_TOKEN", "")
+    if not token:
+        return jsonify({"status": "skip", "reason": "토큰 없음"})
+
+    if blog_id is None:
+        blog_id = request.args.get("blog_id", "test")
+        hours = request.args.get("hours", "테스트")
+        label = request.args.get("label", "")
+
+    msg = f"⚠ 블로그 이상 감지!\n\n{blog_id} ({label})\n마지막 글: {hours}시간 전\n기준 초과: {WARN_HOURS}시간\n\n확인: https://blog-monitor-p4nn.onrender.com"
+    data = json.dumps({
+        "object_type": "text",
+        "text": msg,
+        "link": {"web_url": "https://blog-monitor-p4nn.onrender.com", "mobile_web_url": "https://blog-monitor-p4nn.onrender.com"}
+    }).encode()
+
+    req = urllib.request.Request(
+        "https://kapi.kakao.com/v2/api/talk/memo/default/send",
+        data=urllib.parse.urlencode({"template_object": json.dumps({
+            "object_type": "text",
+            "text": msg,
+            "link": {"web_url": "https://blog-monitor-p4nn.onrender.com"}
+        })}).encode(),
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/x-www-form-urlencoded"},
+        method="POST"
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"status": "error", "reason": str(e)})
 
 
 if __name__ == "__main__":
