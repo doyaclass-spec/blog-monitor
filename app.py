@@ -280,7 +280,7 @@ def daily_report():
         result = fetch_blog_posts(bid)
         count = result.get("today_count", 0)
         total += count
-        status = "✅" if count >= DAILY_GOAL else "⚠️"
+        status = "⚠️" if count >= DAILY_GOAL else "✅"
         lines.append(f"{status} {blabel}: {count}개")
 
     msg = f"📊 블로그 모니터 일일 리포트\n{yesterday_str}\n\n" + "\n".join(lines) + f"\n\n총 발행: {total}개\n\n👉 https://blog-monitor-p4nn.onrender.com"
@@ -326,7 +326,7 @@ def check_goal():
         if count >= DAILY_GOAL:
             goal_alert_sent[bid] = today
             if token:
-                msg = f"🎉 블로그 목표 달성!\n\n대표님!!\n{blabel}가 오늘 {count}개 발행 완료!\n목표 {DAILY_GOAL}개 달성했어요 👏\n\n👉 https://blog-monitor-p4nn.onrender.com"
+                msg = f"🚨 블로그 모니터 이상 감지!\n\n대표님!!\n{blabel}가 하루에 {count}개 작성했는데 프로그램 확인해보세요!\n\n👉 https://blog-monitor-p4nn.onrender.com"
                 data = urllib.parse.urlencode({"template_object": json.dumps({
                     "object_type": "text",
                     "text": msg,
