@@ -11,6 +11,8 @@ app = Flask(__name__)
 
 KST = timezone(timedelta(hours=9))
 WARN_HOURS = 6
+ALERT_INTERVAL_HOURS = 3
+alert_last_sent = {}
 
 BLOG_IDS = [
     os.environ.get("BLOG1", ""),
