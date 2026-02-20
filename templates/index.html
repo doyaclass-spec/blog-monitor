@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>네이버 자동화 블로그 모니터 — AI마케팅전략연구소</title>
+<title>네이버 블로그 자동화 모니터 — AI마케팅전략연구소</title>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -80,7 +80,25 @@ header{margin-bottom:36px;border-bottom:1px solid var(--border);padding-bottom:0
 }
 .brand-powered{
   font-size:12px;color:var(--muted);
-  letter-spacing:2px;margin-top:10px;font-weight:400;
+  letter-spacing:1.5px;margin-top:10px;font-weight:400;
+}
+.ai-tags{
+  display:flex;align-items:center;justify-content:center;
+  flex-wrap:wrap;gap:8px;margin-top:14px;
+}
+.ai-tag{
+  font-size:11px;font-weight:600;
+  color:rgba(0,204,255,0.75);
+  background:rgba(0,204,255,0.06);
+  border:1px solid rgba(0,204,255,0.15);
+  border-radius:20px;padding:4px 12px;
+  letter-spacing:0.3px;
+  transition:all 0.2s;
+}
+.ai-tag:hover{
+  color:var(--accent);
+  background:rgba(0,204,255,0.1);
+  border-color:rgba(0,204,255,0.3);
 }
 
 /* 컨트롤 바 */
@@ -276,24 +294,28 @@ header{margin-bottom:36px;border-bottom:1px solid var(--border);padding-bottom:0
   border:1px solid var(--border2);
   border-radius:12px;padding:16px;
   transition:border-color 0.2s,box-shadow 0.2s;
+  overflow:hidden;
+  min-width:0;
 }
 .weekly-row:hover{border-color:var(--border);box-shadow:0 4px 20px rgba(0,0,0,0.2);}
-.weekly-blog-name{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.weekly-blog-name{display:flex;align-items:center;gap:8px;margin-bottom:14px;min-width:0;}
 .weekly-id{
   font-family:'JetBrains Mono',monospace;
   font-size:13px;font-weight:600;color:var(--accent);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
 .weekly-label{
   font-size:11px;font-weight:700;
   color:var(--gold);background:rgba(245,200,66,0.08);
   padding:2px 9px;border-radius:5px;
   border:1px solid rgba(245,200,66,0.22);
+  flex-shrink:0;
 }
 
-.bars-wrap{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;align-items:end;height:52px;margin-bottom:7px;}
+.bars-wrap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;align-items:end;height:56px;margin-bottom:8px;}
 .bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px;}
 .bar-inner{
-  width:100%;border-radius:3px 3px 0 0;min-height:3px;
+  width:100%;border-radius:4px 4px 0 0;min-height:3px;
   background:linear-gradient(180deg,rgba(0,204,255,0.45),rgba(0,204,255,0.15));
   border:1px solid rgba(0,204,255,0.3);
   transition:height 0.7s cubic-bezier(0.34,1.56,0.64,1);
@@ -303,11 +325,19 @@ header{margin-bottom:36px;border-bottom:1px solid var(--border);padding-bottom:0
   border-color:rgba(0,230,118,0.5);
   box-shadow:0 -3px 10px rgba(0,230,118,0.25);
 }
-.bar-num{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);font-weight:600;line-height:1;}
+.bar-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);font-weight:600;line-height:1;}
 .bar-num.is-today{color:var(--ok);}
-.dates-wrap{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
-.date-col{text-align:center;font-size:10px;color:var(--muted);line-height:1.6;}
+.dates-wrap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.date-col{text-align:center;font-size:9px;color:var(--muted);line-height:1.6;}
 .date-col.is-today{color:var(--ok);font-weight:700;}
+
+/* 모바일: 4일치만 표시 */
+@media(max-width:768px){
+  .bars-wrap{grid-template-columns:repeat(4,1fr);}
+  .dates-wrap{grid-template-columns:repeat(4,1fr);}
+  .bar-col.hide-mobile{display:none;}
+  .date-col.hide-mobile{display:none;}
+}
 
 /* ═══════════════════════════════
    블로그 카드
@@ -589,9 +619,15 @@ footer{
 <!-- ══ 헤더 ══ -->
 <header>
   <div class="header-brand">
-    <div class="brand-eyebrow">AI-Powered Monitoring System</div>
-    <h1 class="brand-title">네이버 자동화 블로그 <span class="hl">모니터</span></h1>
+    <div class="brand-eyebrow">AI 자동화 블로그 실시간 모니터링 시스템</div>
+    <h1 class="brand-title">네이버 블로그 <span class="hl">AI 자동화</span> 모니터</h1>
     <div class="brand-powered">powered by AI마케팅전략연구소 · {{ warn_hours }}시간 기준</div>
+    <div class="ai-tags">
+      <span class="ai-tag">🧠 AI 글쓰기</span>
+      <span class="ai-tag">⚡ 실시간 감지</span>
+      <span class="ai-tag">📡 자동 모니터링</span>
+      <span class="ai-tag">🔔 카카오톡 알림</span>
+    </div>
   </div>
   <div class="header-controls">
     <div class="hclock">
@@ -600,7 +636,7 @@ footer{
       <div class="hclock-kst">🇰🇷 Korea Standard Time</div>
     </div>
     <div class="htimer">
-      <div class="htimer-label">다음 갱신까지</div>
+      <div class="htimer-label">AI 자동 갱신까지</div>
       <div class="htimer-val" id="countdown">30:00</div>
       <div class="hprogress"><div class="hprogress-fill" id="progressFill" style="width:100%"></div></div>
     </div>
@@ -614,7 +650,7 @@ footer{
 <!-- ══ 요약 ══ -->
 <div class="summary">
   <div class="sum-card total" style="animation-delay:0s">
-    <div class="sum-label">전체 모니터링</div>
+    <div class="sum-label">전체 블로그</div>
     <div class="sum-value" id="totalCount">{{ blogs|length }}</div>
   </div>
   <div class="sum-card ok" style="animation-delay:0.06s">
@@ -696,24 +732,24 @@ footer{
 <footer>
   <div class="footer-inner">
     <div class="footer-left">
-      <div class="footer-logo">네이버 블로그 <span>모니터</span></div>
+      <div class="footer-logo">네이버 블로그 <span>AI 자동화</span> 모니터</div>
       <div class="footer-desc">
-        AI 자동화 프로그램 실시간 감시 시스템<br>
-        블로그 발행 이상 감지 즉시 카카오톡 알림
+        AI가 직접 쓰는 블로그 · 실시간 발행 현황 감시<br>
+        이상 감지 시 카카오톡 즉시 알림
       </div>
     </div>
     <div class="footer-center">
       <div class="footer-status">
         <span class="footer-dot"></span>
-        시스템 정상 운영 중
+        AI 시스템 정상 가동 중
       </div>
-      <div class="footer-sys" id="footerSys">갱신 주기 · 30분마다 자동 확인</div>
+      <div class="footer-sys" id="footerSys">AI 자동 갱신 · 30분마다 스캔</div>
     </div>
     <div class="footer-right">
       <div class="footer-info">
         <strong>모니터링 블로그</strong> {{ blogs|length }}개<br>
         <strong>이상 감지 기준</strong> {{ warn_hours }}시간 무발행<br>
-        <strong>알림 방식</strong> 카카오톡 나에게 보내기
+        <strong>알림 방식</strong> 카카오톡 자동 알림
       </div>
       <div class="footer-credit">© AI마케팅전략연구소</div>
     </div>
@@ -877,18 +913,20 @@ function renderWeekly(idx,blogId,label,history){
   const today=getTodayKST();
   const maxCount=Math.max(...history.map(h=>h.count),1);
   const labelHtml=label?`<span class="weekly-label">${label}</span>`:"";
-  const barsHtml=history.map(h=>{
+  const barsHtml=history.map((h,hi)=>{
     const isToday=h.date===today;
     const pct=Math.max((h.count/maxCount)*100,h.count>0?8:2);
-    return`<div class="bar-col">
+    const hideCls=hi<3?" hide-mobile":"";
+    return`<div class="bar-col${hideCls}">
       <span class="bar-num${isToday?" is-today":""}">${h.count}</span>
       <div class="bar-inner${isToday?" is-today":""}" style="height:${pct}%"></div>
     </div>`;
   }).join("");
-  const datesHtml=history.map(h=>{
+  const datesHtml=history.map((h,hi)=>{
     const isToday=h.date===today;
     const{short,dow}=formatDate(h.date);
-    return`<div class="date-col${isToday?" is-today":""}">${short}<br>${dow}</div>`;
+    const hideCls=hi<3?" hide-mobile":"";
+    return`<div class="date-col${isToday?" is-today":""}${hideCls}">${short}<br>${dow}</div>`;
   }).join("");
   el.innerHTML=`
     <div class="weekly-blog-name">
