@@ -12,7 +12,9 @@ app = Flask(__name__)
 KST = timezone(timedelta(hours=9))
 WARN_HOURS = 6
 ALERT_INTERVAL_HOURS = 3
+DAILY_GOAL = 10  # 하루 목표 발행 수
 alert_last_sent = {}
+goal_alert_sent = {}  # blog_id: date (10개 달성 알림 발송 날짜)
 
 BLOG_IDS = [
     os.environ.get("BLOG1", ""),
@@ -257,6 +259,92 @@ def send_kakao_alert(blog_id=None, hours=None, label=None):
         return jsonify({"status": "error", "code": e.code, "reason": body})
     except Exception as e:
         return jsonify({"status": "error", "reason": str(e)})
+
+
+@app.route("/api/daily-report")
+def daily_report():
+    """매일 아침 일일 리포트 카카오톡 전송"""
+    token = os.environ.get("KAKAO_ACCESS_TOKEN", "")
+    if not token:
+        return jsonify({"status": "skip", "reason": "토큰 없음"})
+
+    today = datetime.now(KST).date()
+    yesterday = today - timedelta(days=1)
+    yesterday_str = yesterday.isoformat()
+
+    lines = []
+    total = 0
+    for bid, blabel in zip(BLOG_IDS, BLOG_LABELS):
+        if not bid:
+            continue
+        result = fetch_blog_posts(bid)
+        count = result.get("today_count", 0)
+        total += count
+        status = "✅" if count >= DAILY_GOAL else "⚠️"
+        lines.append(f"{status} {blabel}: {count}개")
+
+    msg = f"📊 블로그 모니터 일일 리포트\n{yesterday_str}\n\n" + "\n".join(lines) + f"\n\n총 발행: {total}개\n\n👉 https://blog-monitor-p4nn.onrender.com"
+
+    data = urllib.parse.urlencode({"template_object": json.dumps({
+        "object_type": "text",
+        "text": msg,
+        "link": {"web_url": "https://blog-monitor-p4nn.onrender.com"}
+    })}).encode()
+    req = urllib.request.Request(
+        "https://kapi.kakao.com/v2/api/talk/memo/default/send",
+        data=data,
+        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/x-www-form-urlencoded"},
+        method="POST"
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+            return jsonify({"status": "ok", "result": result})
+    except urllib.error.HTTPError as e:
+        return jsonify({"status": "error", "reason": e.read().decode()})
+    except Exception as e:
+        return jsonify({"status": "error", "reason": str(e)})
+
+
+@app.route("/api/check-goal")
+def check_goal():
+    """하루 10개 달성 감지 및 카카오 알림"""
+    token = os.environ.get("KAKAO_ACCESS_TOKEN", "")
+    today = datetime.now(KST).date()
+    alerts_sent = []
+
+    for bid, blabel in zip(BLOG_IDS, BLOG_LABELS):
+        if not bid:
+            continue
+        result = fetch_blog_posts(bid)
+        count = result.get("today_count", 0)
+
+        # 오늘 이미 알림 보냈으면 스킵
+        if goal_alert_sent.get(bid) == today:
+            continue
+
+        if count >= DAILY_GOAL:
+            goal_alert_sent[bid] = today
+            if token:
+                msg = f"🎉 블로그 목표 달성!\n\n대표님!!\n{blabel}가 오늘 {count}개 발행 완료!\n목표 {DAILY_GOAL}개 달성했어요 👏\n\n👉 https://blog-monitor-p4nn.onrender.com"
+                data = urllib.parse.urlencode({"template_object": json.dumps({
+                    "object_type": "text",
+                    "text": msg,
+                    "link": {"web_url": "https://blog-monitor-p4nn.onrender.com"}
+                })}).encode()
+                req = urllib.request.Request(
+                    "https://kapi.kakao.com/v2/api/talk/memo/default/send",
+                    data=data,
+                    headers={"Authorization": f"Bearer {token}", "Content-Type": "application/x-www-form-urlencoded"},
+                    method="POST"
+                )
+                try:
+                    with urllib.request.urlopen(req, timeout=10) as resp:
+                        alerts_sent.append(blabel)
+                except:
+                    pass
+
+    return jsonify({"status": "ok", "alerts_sent": alerts_sent})
 
 
 if __name__ == "__main__":
