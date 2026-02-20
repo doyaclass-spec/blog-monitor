@@ -74,10 +74,10 @@
   .bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:2px;}
   .bar-inner{width:100%;border-radius:3px 3px 0 0;min-height:3px;background:rgba(0,212,255,0.25);border:1px solid rgba(0,212,255,0.35);transition:height 0.5s ease;}
   .bar-inner.is-today{background:rgba(0,230,118,0.35);border-color:rgba(0,230,118,0.55);}
-  .bar-num{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--accent);font-weight:600;line-height:1;}
+  .bar-num{font-family:'JetBrains Mono',monospace;font-size:22px;color:var(--accent);font-weight:700;line-height:1;}
   .bar-num.is-today{color:var(--ok);}
   .dates-wrap{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
-  .date-col{text-align:center;font-size:9px;color:var(--muted);line-height:1.5;}
+  .date-col{text-align:center;font-size:10px;color:var(--muted);line-height:1.5;}
   .date-col.is-today{color:var(--ok);font-weight:700;}
 
   /* ── 블로그 카드 그리드 ── */
@@ -297,7 +297,7 @@ function renderWeekly(idx, blogId, label, history){
   const datesHtml=history.map(h=>{
     const isToday=h.date===today;
     const{short,dow}=formatDate(h.date);
-    return`<div class="date-col${isToday?" is-today":""}">${short}<br>${dow}</div>`;
+    return`<div class="date-col${isToday?" is-today":""}" style="font-size:10px">${short}<br>${dow}</div>`;
   }).join("");
 
   el.innerHTML=`
