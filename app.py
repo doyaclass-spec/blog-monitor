@@ -169,9 +169,12 @@ def kakao_auth():
 
     # 코드로 토큰 발급
     client_id = os.environ.get("KAKAO_CLIENT_ID", "")
+    client_secret = os.environ.get("KAKAO_CLIENT_SECRET", "")
     redirect_uri = os.environ.get("KAKAO_REDIRECT_URI", "")
     token_url = "https://kauth.kakao.com/oauth/token"
-    data = f"grant_type=authorization_code&client_id={client_id}&redirect_uri={redirect_uri}&code={code}"
+    
+    data = f"grant_type=authorization_code&client_id={client_id}&client_secret={client_secret}&redirect_uri={redirect_uri}&code={code}"
+    
     req = urllib.request.Request(token_url, data=data.encode(), headers={"Content-Type": "application/x-www-form-urlencoded"}, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
@@ -188,42 +191,4 @@ def kakao_auth():
         return f"<h2>❌ 오류: {e}</h2>"
 
 
-@app.route("/api/send-kakao", methods=["GET", "POST"])
-def send_kakao_alert(blog_id=None, hours=None, label=None):
-    """카카오톡 나에게 보내기"""
-    token = os.environ.get("KAKAO_ACCESS_TOKEN", "")
-    if not token:
-        return jsonify({"status": "skip", "reason": "토큰 없음"})
-
-    if blog_id is None:
-        blog_id = request.args.get("blog_id", "test")
-        hours = request.args.get("hours", "테스트")
-        label = request.args.get("label", "")
-
-    msg = f"⚠ 블로그 이상 감지!\n\n{blog_id} ({label})\n마지막 글: {hours}시간 전\n기준 초과: {WARN_HOURS}시간\n\n확인: https://blog-monitor-p4nn.onrender.com"
-    data = json.dumps({
-        "object_type": "text",
-        "text": msg,
-        "link": {"web_url": "https://blog-monitor-p4nn.onrender.com", "mobile_web_url": "https://blog-monitor-p4nn.onrender.com"}
-    }).encode()
-
-    req = urllib.request.Request(
-        "https://kapi.kakao.com/v2/api/talk/memo/default/send",
-        data=urllib.parse.urlencode({"template_object": json.dumps({
-            "object_type": "text",
-            "text": msg,
-            "link": {"web_url": "https://blog-monitor-p4nn.onrender.com"}
-        })}).encode(),
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/x-www-form-urlencoded"},
-        method="POST"
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return jsonify({"status": "ok"})
-    except Exception as e:
-        return jsonify({"status": "error", "reason": str(e)})
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+@app.route("/api/send-kakao", methods
