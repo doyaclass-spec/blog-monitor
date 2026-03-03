@@ -502,10 +502,10 @@ def get_exposure_star(ratio):
 
 
 def check_blog_exposure(blog_id, post_title):
-    """글 제목 키워드별 노출 현황 - 병렬 처리로 빠르게"""
+    """글 제목 키워드별 노출 현황 - 병렬 처리 + 제목 전체 검색 보정"""
     keywords = extract_keywords(post_title)
 
-    # 검색량 + 블로그 순위 병렬 조회
+    # 검색량 + 키워드 순위 + 제목 전체 순위 병렬 조회
     volume_map = {}
     rank_map = {}
 
@@ -515,14 +515,20 @@ def check_blog_exposure(blog_id, post_title):
     def fetch_rank(kw):
         return kw, search_naver_blog(kw, blog_id)
 
-    with ThreadPoolExecutor(max_workers=7) as ex:
+    def fetch_title_rank():
+        # 제목 전체로 검색 (팝업엔 표시 안 함 - 내부 보정용)
+        return search_naver_blog(post_title, blog_id)
+
+    with ThreadPoolExecutor(max_workers=8) as ex:
         vol_future = ex.submit(fetch_volume)
         rank_futures = {ex.submit(fetch_rank, kw): kw for kw in keywords}
+        title_future = ex.submit(fetch_title_rank)
 
         volume_map = vol_future.result()
         for future in as_completed(rank_futures):
             kw, rank = future.result()
             rank_map[kw] = rank
+        title_rank = title_future.result()  # 제목 전체 순위 (표시 안 함)
 
     results = []
     exposed_count = 0
@@ -548,18 +554,34 @@ def check_blog_exposure(blog_id, post_title):
 
     total = len(results)
     ratio = exposed_count / total if total > 0 else 0
+
+    # 제목 전체 검색으로 노출되면 → 미노출 판정 방지 (top 등급 보정)
+    title_exposed = title_rank is not None and title_rank > 0
     top_grade = results[0] if results else {}
+
+    if title_exposed and top_grade.get("css") == "none":
+        # 키워드 검색엔 없지만 제목 검색엔 노출 → "노출 중"으로 보정
+        corrected_grade = get_exposure_grade(title_rank)
+        effective_css = corrected_grade["css"]
+        effective_grade = corrected_grade["grade"]
+        effective_icon = corrected_grade["icon"]
+    else:
+        effective_css = top_grade.get("css", "none")
+        effective_grade = top_grade.get("grade", "미노출")
+        effective_icon = top_grade.get("icon", "❌")
 
     return {
         "title": post_title,
-        "keywords": results,
+        "keywords": results,          # 팝업 표시용 (제목 전체 제외)
+        "title_rank": title_rank,     # 제목 전체 순위 (참고용)
+        "title_exposed": title_exposed,
         "exposed": exposed_count,
         "total": total,
         "ratio": round(ratio * 100),
         "star": get_exposure_star(ratio),
-        "top_grade": top_grade.get("grade", "미노출"),
-        "top_icon": top_grade.get("icon", "❌"),
-        "top_css": top_grade.get("css", "none"),
+        "top_grade": effective_grade,
+        "top_icon": effective_icon,
+        "top_css": effective_css,
     }
 
 # ─── Flask 라우트 ─────────────────────────────────────────
