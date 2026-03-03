@@ -347,6 +347,175 @@ def job_final_report():
         print(f"[SCHEDULER] final_report 발송 완료 ({today})")
 
 
+
+
+# ─── 네이버 검색 노출 + 검색량 확인 ───────────────────────────
+NAVER_CLIENT_ID     = os.environ.get("NAVER_CLIENT_ID", "")
+NAVER_CLIENT_SECRET = os.environ.get("NAVER_CLIENT_SECRET", "")
+NAVER_AD_API_KEY    = os.environ.get("NAVER_AD_API_KEY", "")
+NAVER_AD_SECRET_KEY = os.environ.get("NAVER_AD_SECRET_KEY", "")
+NAVER_AD_CUSTOMER_ID= os.environ.get("NAVER_AD_CUSTOMER_ID", "")
+
+
+import re
+import hmac
+import hashlib
+import base64
+import time as time_module
+
+
+def extract_keywords(title):
+    """글 제목에서 검색 키워드 추출"""
+    clean = re.sub(r'[^가-힣a-zA-Z\s]', ' ', title)
+    words = [w.strip() for w in clean.split() if len(w.strip()) >= 2]
+    keywords = []
+    for w in words:
+        if w not in keywords:
+            keywords.append(w)
+    for i in range(len(words) - 1):
+        combo = words[i] + " " + words[i+1]
+        if combo not in keywords:
+            keywords.append(combo)
+    return keywords[:6]
+
+
+def get_search_volume(keywords):
+    """네이버 검색광고 API로 키워드 월간 검색량 조회 (PC+모바일 합산)"""
+    if not NAVER_AD_API_KEY or not NAVER_AD_SECRET_KEY or not NAVER_AD_CUSTOMER_ID:
+        return {}
+
+    timestamp = str(int(time_module.time() * 1000))
+    method = "GET"
+    uri = "/keywordstool"
+    msg = f"{timestamp}.{method}.{uri}"
+    sig = base64.b64encode(
+        hmac.new(NAVER_AD_SECRET_KEY.encode(), msg.encode(), hashlib.sha256).digest()
+    ).decode()
+
+    kw_param = "&".join([f"hintKeywords={urllib.parse.quote(k)}" for k in keywords])
+    url = f"https://api.naver.com/keywordstool?{kw_param}&showDetail=1"
+    req = urllib.request.Request(url, headers={
+        "Content-Type": "application/json",
+        "X-Timestamp": timestamp,
+        "X-API-KEY": NAVER_AD_API_KEY,
+        "X-Customer": NAVER_AD_CUSTOMER_ID,
+        "X-Signature": sig,
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+        volume_map = {}
+        for item in result.get("keywordList", []):
+            kw = item.get("relKeyword", "")
+            pc = item.get("monthlyPcQcCnt", 0)
+            mobile = item.get("monthlyMobileQcCnt", 0)
+            try:
+                pc = int(str(pc).replace("< 10", "5"))
+                mobile = int(str(mobile).replace("< 10", "5"))
+            except:
+                pc, mobile = 0, 0
+            volume_map[kw] = pc + mobile
+        return volume_map
+    except Exception as e:
+        print(f"[NAVER AD] 검색량 오류: {e}")
+        return {}
+
+
+def search_naver_blog(keyword, blog_id):
+    """네이버 블로그 검색 API로 키워드 순위 반환"""
+    if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
+        return None
+    encoded = urllib.parse.quote(keyword)
+    url = f"https://openapi.naver.com/v1/search/blog.json?query={encoded}&display=100&sort=sim"
+    req = urllib.request.Request(url, headers={
+        "X-Naver-Client-Id": NAVER_CLIENT_ID,
+        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
+    })
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            result = json.loads(resp.read().decode())
+        items = result.get("items", [])
+        for i, item in enumerate(items):
+            link = item.get("link", "") + item.get("bloggerlink", "")
+            if blog_id.lower() in link.lower():
+                return i + 1
+        return 0
+    except Exception as e:
+        print(f"[NAVER] 검색 오류: {e}")
+        return None
+
+
+def get_exposure_grade(rank):
+    """순위 → 노출 등급"""
+    if rank is None:
+        return {"grade": "오류", "icon": "❓", "css": "err", "score": 0}
+    if rank == 0:
+        return {"grade": "미노출", "icon": "❌", "css": "none", "score": 0}
+    elif rank <= 10:
+        return {"grade": "상위노출", "icon": "🔥", "css": "hot", "score": 5}
+    elif rank <= 30:
+        return {"grade": "노출 중", "icon": "✅", "css": "good", "score": 4}
+    elif rank <= 50:
+        return {"grade": "하위노출", "icon": "🔶", "css": "mid", "score": 3}
+    else:
+        return {"grade": "노출 약함", "icon": "⚠️", "css": "low", "score": 2}
+
+
+def get_exposure_star(ratio):
+    if ratio >= 0.75: return "⭐⭐⭐⭐⭐ 최상"
+    elif ratio >= 0.5: return "⭐⭐⭐⭐ 상"
+    elif ratio >= 0.25: return "⭐⭐⭐ 중"
+    elif ratio > 0: return "⭐⭐ 하"
+    else: return "⭐ 미노출"
+
+
+def check_blog_exposure(blog_id, post_title):
+    """글 제목 키워드별 노출 현황 (검색량 높은 순 정렬)"""
+    keywords = extract_keywords(post_title)
+
+    # 검색량 조회
+    volume_map = get_search_volume(keywords)
+
+    results = []
+    exposed_count = 0
+    for kw in keywords:
+        rank = search_naver_blog(kw, blog_id)
+        grade = get_exposure_grade(rank)
+        if rank and rank > 0:
+            exposed_count += 1
+        vol = volume_map.get(kw, 0)
+        results.append({
+            "keyword": kw,
+            "rank": rank,
+            "grade": grade["grade"],
+            "icon": grade["icon"],
+            "css": grade["css"],
+            "score": grade["score"],
+            "volume": vol,
+            "volume_label": f"{vol:,}" if vol >= 1000 else str(vol) if vol > 0 else "-",
+        })
+
+    # 검색량 높은 순 정렬
+    results.sort(key=lambda x: x["volume"], reverse=True)
+
+    total = len(results)
+    ratio = exposed_count / total if total > 0 else 0
+
+    # 대표 등급 = 검색량 1위 키워드 기준
+    top_grade = results[0] if results else {}
+
+    return {
+        "title": post_title,
+        "keywords": results,
+        "exposed": exposed_count,
+        "total": total,
+        "ratio": round(ratio * 100),
+        "star": get_exposure_star(ratio),
+        "top_grade": top_grade.get("grade", "미노출"),
+        "top_icon": top_grade.get("icon", "❌"),
+        "top_css": top_grade.get("css", "none"),
+    }
+
 # ─── Flask 라우트 ─────────────────────────────────────────
 @app.route("/")
 def index():
@@ -366,6 +535,32 @@ def api_check():
         history = get_history(bid)
         results.append({"blog_id": bid, "label": blabel, "history": history, **result})
     return jsonify({"results": results, "checked_at": datetime.now(KST).strftime("%Y-%m-%d %H:%M:%S"), "warn_hours": WARN_HOURS})
+
+
+@app.route("/api/exposure/<blog_id>")
+def api_exposure(blog_id):
+    """특정 블로그 최신 5개 글 노출 현황 자동 확인"""
+    result = fetch_blog_posts(blog_id)
+    if not result.get("ok") or not result.get("posts"):
+        return jsonify({"status": "error", "reason": "글 없음"})
+
+    posts = result["posts"][:5]  # 최신 5개만
+    exposures = []
+    for post in posts:
+        exp = check_blog_exposure(blog_id, post["title"])
+        exposures.append(exp)
+
+    return jsonify({"status": "ok", "blog_id": blog_id, "exposures": exposures})
+
+
+@app.route("/api/exposure/detail/<blog_id>")
+def api_exposure_detail(blog_id):
+    """특정 글 키워드 상세 노출 현황 (팝업용)"""
+    title = request.args.get("title", "")
+    if not title:
+        return jsonify({"status": "error", "reason": "title 파라미터 필요"})
+    exposure = check_blog_exposure(blog_id, title)
+    return jsonify({"status": "ok", "exposure": exposure})
 
 
 @app.route("/api/record", methods=["GET", "POST"])
