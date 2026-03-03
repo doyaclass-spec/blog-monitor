@@ -362,6 +362,7 @@ import hmac
 import hashlib
 import base64
 import time as time_module
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def extract_keywords(title):
@@ -402,7 +403,7 @@ def get_search_volume(keywords):
         "X-Signature": sig,
     })
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=5) as resp:
             result = json.loads(resp.read().decode())
         volume_map = {}
         for item in result.get("keywordList", []):
@@ -432,7 +433,7 @@ def search_naver_blog(keyword, blog_id):
         "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
     })
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=5) as resp:
             result = json.loads(resp.read().decode())
         items = result.get("items", [])
         for i, item in enumerate(items):
@@ -470,16 +471,32 @@ def get_exposure_star(ratio):
 
 
 def check_blog_exposure(blog_id, post_title):
-    """글 제목 키워드별 노출 현황 (검색량 높은 순 정렬)"""
+    """글 제목 키워드별 노출 현황 - 병렬 처리로 빠르게"""
     keywords = extract_keywords(post_title)
 
-    # 검색량 조회
-    volume_map = get_search_volume(keywords)
+    # 검색량 + 블로그 순위 병렬 조회
+    volume_map = {}
+    rank_map = {}
+
+    def fetch_volume():
+        return get_search_volume(keywords)
+
+    def fetch_rank(kw):
+        return kw, search_naver_blog(kw, blog_id)
+
+    with ThreadPoolExecutor(max_workers=7) as ex:
+        vol_future = ex.submit(fetch_volume)
+        rank_futures = {ex.submit(fetch_rank, kw): kw for kw in keywords}
+
+        volume_map = vol_future.result()
+        for future in as_completed(rank_futures):
+            kw, rank = future.result()
+            rank_map[kw] = rank
 
     results = []
     exposed_count = 0
     for kw in keywords:
-        rank = search_naver_blog(kw, blog_id)
+        rank = rank_map.get(kw)
         grade = get_exposure_grade(rank)
         if rank and rank > 0:
             exposed_count += 1
@@ -500,8 +517,6 @@ def check_blog_exposure(blog_id, post_title):
 
     total = len(results)
     ratio = exposed_count / total if total > 0 else 0
-
-    # 대표 등급 = 검색량 1위 키워드 기준
     top_grade = results[0] if results else {}
 
     return {
@@ -653,7 +668,7 @@ def kakao_auth():
         method="POST",
     )
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        with urllib.request.urlopen(req, timeout=5) as resp:
             result = json.loads(resp.read().decode())
         access_token = result.get("access_token", "")
         refresh_token = result.get("refresh_token", "")
