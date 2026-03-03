@@ -366,18 +366,39 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 def extract_keywords(title):
-    """글 제목에서 검색 키워드 추출"""
+    """글 제목 앞부분 기반 검색 키워드 추출
+    - 뉴스/블로그 제목은 앞 2~3단어가 핵심 키워드
+    - 단어 단독 + 2단어 + 3단어 조합으로 현실적인 검색어 생성
+    """
     clean = re.sub(r'[^가-힣a-zA-Z\s]', ' ', title)
     words = [w.strip() for w in clean.split() if len(w.strip()) >= 2]
+    if not words:
+        return [title[:20]]
+
     keywords = []
-    for w in words:
+
+    # 1. 앞 3단어 조합 (가장 핵심)
+    if len(words) >= 3:
+        keywords.append(" ".join(words[:3]))
+    # 2. 앞 2단어 조합
+    if len(words) >= 2:
+        keywords.append(" ".join(words[:2]))
+    # 3. 2~4번째 단어 조합
+    if len(words) >= 4:
+        keywords.append(" ".join(words[1:4]))
+    if len(words) >= 3:
+        keywords.append(" ".join(words[1:3]))
+    # 4. 단독 핵심어 (앞 3개)
+    for w in words[:3]:
         if w not in keywords:
             keywords.append(w)
-    for i in range(len(words) - 1):
-        combo = words[i] + " " + words[i+1]
-        if combo not in keywords:
-            keywords.append(combo)
-    return keywords[:6]
+
+    # 중복 제거, 최대 6개
+    seen = []
+    for k in keywords:
+        if k not in seen:
+            seen.append(k)
+    return seen[:6]
 
 
 def get_search_volume(keywords):
@@ -437,8 +458,18 @@ def search_naver_blog(keyword, blog_id):
             result = json.loads(resp.read().decode())
         items = result.get("items", [])
         for i, item in enumerate(items):
-            link = item.get("link", "") + item.get("bloggerlink", "")
-            if blog_id.lower() in link.lower():
+            link = item.get("link", "").lower()
+            bloggerlink = item.get("bloggerlink", "").lower()
+            bid = blog_id.lower()
+            # 여러 형식 대응
+            # 1. https://blog.naver.com/wolfcheck/...
+            # 2. http://blog.naver.com/wolfcheck
+            # 3. blogId=wolfcheck 형식
+            if (bid in link or
+                bid in bloggerlink or
+                f"blogid={bid}" in link or
+                f"/{bid}" in link or
+                f"/{bid}" in bloggerlink):
                 return i + 1
         return 0
     except Exception as e:
